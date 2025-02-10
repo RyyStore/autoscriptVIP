@@ -1,4 +1,4 @@
-REPO="https://raw.githubusercontent.com/jvoscript/autoscript-vip/main/bin/"
+REPO="https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/bin/"
 wget -q -O /etc/systemd/system/limitvmess.service "${REPO}limitvmess.service" && chmod +x limitvmess.service >/dev/null 2>&1
 wget -q -O /etc/systemd/system/limitvless.service "${REPO}limitvless.service" && chmod +x limitvless.service >/dev/null 2>&1
 wget -q -O /etc/systemd/system/limittrojan.service "${REPO}limittrojan.service" && chmod +x limittrojan.service >/dev/null 2>&1
