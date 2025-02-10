@@ -40,7 +40,7 @@ fun_bar() {
 }
 
 res1() {
-    base_url="https://raw.githubusercontent.com/jvoscript/autoscript-vip/main/menu"
+    base_url="https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/menu"
     declare -A downloads=(
         ["menu"]="menu.sh" ["m-trgo"]="m-trgo.sh" ["restore"]="restore.sh" ["backup"]="backup.sh"
         ["addnoobz"]="../bot/addnoobz.sh" ["cek-noobz"]="../bot/cek-noobz.sh" ["m-noobz"]="m-noobz.sh"

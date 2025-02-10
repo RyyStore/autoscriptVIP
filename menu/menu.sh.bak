@@ -294,9 +294,9 @@ if [[ -e /etc/github/api ]]; then
 m-ip
 else
 mkdir /etc/github
-echo "____" > /etc/github/api
-echo "____" > /etc/github/email
-echo "____" > /etc/github/username
+echo "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" > /etc/github/api
+echo "fernandairfan90@gmail.com" > /etc/github/email
+echo "jvoscript" > /etc/github/username
 m-ip
 fi
 }
