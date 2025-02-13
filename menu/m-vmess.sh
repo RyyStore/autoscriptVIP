@@ -1,4 +1,13 @@
 #!/bin/bash
+# Ambil chat_id pengguna dari argumen
+CHATID2="$6"  # Argumen ke-6 adalah chat_id pengguna
+
+# Pastikan CHATID2 sudah diisi
+if [ -z "$CHATID2" ]; then
+    echo "Error: CHATID2 is not set. Please provide the user's chat_id."
+    exit 1
+fi
+
 biji=`date +"%Y-%m-%d" -d "$dateFromServer"`
 colornow=$(cat /etc/rmbl/theme/color.conf)
 NC="\e[0m"
@@ -296,8 +305,9 @@ _______________________________________________________
 Link Opok : vmess://$(echo $VMESS_OPOK | base64 -w 0)
 _______________________________________________________
 END
+# Kirim pesan ke pengguna yang membuat VMess
 if [ ${Quota} = '9999' ]; then
-TEXT="
+    TEXT="
 ◇━━━━━━━━━━━━━━━━━◇
 Premium Vmess Account
 ◇━━━━━━━━━━━━━━━━━◇
@@ -335,7 +345,7 @@ $author
 ◇━━━━━━━━━━━━━━━━━◇
 "
 else
-TEXT="
+    TEXT="
 ◇━━━━━━━━━━━━━━━━━◇
 Premium Vmess Account
 ◇━━━━━━━━━━━━━━━━━◇
@@ -374,7 +384,9 @@ $author
 ◇━━━━━━━━━━━━━━━━━◇
 "
 fi
-curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
+
+# Kirim pesan ke pengguna yang membuat VMess
+curl -s --max-time $TIMES -d "chat_id=$CHATID2&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL2 >/dev/null
 cd
 if [ ! -e /etc/tele ]; then
 echo -ne
@@ -712,7 +724,7 @@ Expired Until    : $timer Minutes
 $author
 ◇━━━━━━━━━━━━━━━━━◇
 "
-curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
+curl -s --max-time $TIMES -d "chat_id=$CHATID2&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
 cd
 if [ ! -e /etc/tele ]; then
 echo -ne
