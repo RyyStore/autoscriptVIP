@@ -1,5 +1,4 @@
 #!/bin/bash
-USER_CHAT_ID=$6
 biji=`date +"%Y-%m-%d" -d "$dateFromServer"`
 colornow=$(cat /etc/rmbl/theme/color.conf)
 NC="\e[0m"
@@ -375,8 +374,7 @@ $author
 ◇━━━━━━━━━━━━━━━━━◇
 "
 fi
-curl -s --max-time $TIMES -d "chat_id=$USER_CHAT_ID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
-
+curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
 cd
 if [ ! -e /etc/tele ]; then
 echo -ne
