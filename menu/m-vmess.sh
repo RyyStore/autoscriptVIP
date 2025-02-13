@@ -1,13 +1,4 @@
 #!/bin/bash
-# Ambil chat_id pengguna dari argumen
-CHATID2="$6"  # Argumen ke-6 adalah chat_id pengguna
-
-# Pastikan CHATID2 sudah diisi
-if [ -z "$CHATID2" ]; then
-    echo "Error: CHATID2 is not set. Please provide the user's chat_id."
-    exit 1
-fi
-
 biji=`date +"%Y-%m-%d" -d "$dateFromServer"`
 colornow=$(cat /etc/rmbl/theme/color.conf)
 NC="\e[0m"
@@ -18,7 +9,7 @@ WH='\033[1;37m'
 ipsaya=$(wget -qO- ifconfig.me)
 data_server=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
 date_list=$(date +"%Y-%m-%d" -d "$data_server")
-data_ip="https://raw.githubusercontent.com/RyyStore/permission/main/ip"
+data_ip="https://raw.githubusercontent.com/jvoscript/permission/main/ip"
 checking_sc() {
 useexp=$(curl -sS $data_ip | grep $ipsaya | awk '{print $3}')
 if [[ $date_list < $useexp ]]; then
@@ -305,9 +296,8 @@ _______________________________________________________
 Link Opok : vmess://$(echo $VMESS_OPOK | base64 -w 0)
 _______________________________________________________
 END
-# Kirim pesan ke pengguna yang membuat VMess
 if [ ${Quota} = '9999' ]; then
-    TEXT="
+TEXT="
 ◇━━━━━━━━━━━━━━━━━◇
 Premium Vmess Account
 ◇━━━━━━━━━━━━━━━━━◇
@@ -345,7 +335,7 @@ $author
 ◇━━━━━━━━━━━━━━━━━◇
 "
 else
-    TEXT="
+TEXT="
 ◇━━━━━━━━━━━━━━━━━◇
 Premium Vmess Account
 ◇━━━━━━━━━━━━━━━━━◇
@@ -384,9 +374,7 @@ $author
 ◇━━━━━━━━━━━━━━━━━◇
 "
 fi
-
-# Kirim pesan ke pengguna yang membuat VMess
-curl -s --max-time $TIMES -d "chat_id=$CHATID2&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL2 >/dev/null
+curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
 cd
 if [ ! -e /etc/tele ]; then
 echo -ne
@@ -724,7 +712,7 @@ Expired Until    : $timer Minutes
 $author
 ◇━━━━━━━━━━━━━━━━━◇
 "
-curl -s --max-time $TIMES -d "chat_id=$CHATID2&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
+curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
 cd
 if [ ! -e /etc/tele ]; then
 echo -ne
