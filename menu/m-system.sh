@@ -56,18 +56,18 @@ echo -e "\033[0;33m]\033[1;37m -\033[1;32m Succes !\033[1;37m"
 tput cnorm
 }
 sldns() {
-wget https://raw.githubusercontent.com./jvoscript/autoscript/main/slowdns/ && chmod +x installsl.sh && ./installsl.sh
+wget https://raw.githubusercontent.com./RyyStore/autoscriptVIP/main/slowdns/ && chmod +x installsl.sh && ./installsl.sh
 }
 res1() {
-wget https://raw.githubusercontent.com./jvoscript/autoscript/main/slowdns/ && chmod +x rmbl.sh && ./rmbl.sh
+wget https://raw.githubusercontent.com./RyyStore/autoscriptVIP/main/slowdns/ && chmod +x rmbl.sh && ./rmbl.sh
 clear
 }
 res2() {
-wget https://raw.githubusercontent.com./jvoscript/autoscript/main/slowdns/ && chmod +x rmbl1.sh && ./rmbl1.sh
+wget https://raw.githubusercontent.com./RyyStore/autoscriptVIP/main/slowdns/ && chmod +x rmbl1.sh && ./rmbl1.sh
 clear
 }
 res3() {
-wget https://raw.githubusercontent.com./jvoscript/autoscript/main/slowdns/ && chmod +x rmbl2.sh && ./rmbl2.sh
+wget https://raw.githubusercontent.com./RyyStore/autoscriptVIP/main/slowdns/ && chmod +x rmbl2.sh && ./rmbl2.sh
 clear
 }
 clear
