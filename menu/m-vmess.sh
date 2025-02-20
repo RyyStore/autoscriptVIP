@@ -1,17 +1,46 @@
 #!/bin/bash
-biji=`date +"%Y-%m-%d" -d "$dateFromServer"`
+
+# Mendapatkan tanggal dari server
+biji=$(date +"%Y-%m-%d" -d "$dateFromServer")
+
+# Menentukan tema warna
 colornow=$(cat /etc/rmbl/theme/color.conf)
 NC="\e[0m"
 RED="\033[0;31m"
-COLOR1="$(cat /etc/rmbl/theme/$colornow | grep -w "TEXT" | cut -d: -f2|sed 's/ //g')"
-COLBG1="$(cat /etc/rmbl/theme/$colornow | grep -w "BG" | cut -d: -f2|sed 's/ //g')"
+COLOR1="$(grep -w "TEXT" /etc/rmbl/theme/$colornow | cut -d: -f2 | sed 's/ //g')"
+COLBG1="$(grep -w "BG" /etc/rmbl/theme/$colornow | cut -d: -f2 | sed 's/ //g')"
 WH='\033[1;37m'
-ipsaya=$(wget -qO- ifconfig.me)
+
+# Mengambil IP VPS dengan metode alternatif
+ipsaya=$(curl -s https://api.ipify.org || curl -s https://checkip.amazonaws.com || curl -s https://icanhazip.com)
+
+# Cek apakah IP berhasil diambil
+if [[ -z "$ipsaya" ]]; then
+    echo -e "\033[0;31mGagal mendapatkan IP VPS!\033[0m"
+    exit 1
+fi
+
+echo -e "\033[0;32mIP VPS: $ipsaya\033[0m"
+
+# Mengambil tanggal server dari Google
 data_server=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
-date_list=$(date +"%Y-%m-%d" -d "$data_server")
+
+# Konversi ke format yang bisa dibaca
+if [[ -n "$data_server" ]]; then
+    date_list=$(date +"%Y-%m-%d" -d "$data_server")
+else
+    echo -e "\033[0;31mGagal mendapatkan tanggal dari server!\033[0m"
+    exit 1
+fi
+
+echo -e "\033[0;32mTanggal Server: $date_list\033[0m"
+
+# URL daftar IP izin
 data_ip="https://raw.githubusercontent.com/RyyStore/permission/main/ip"
+
+# Fungsi untuk memeriksa izin script
 checking_sc() {
-useexp=$(curl -sS $data_ip | grep $ipsaya | awk '{print $3}')
+    useexp=$(curl -sS "$data_ip" | grep -w "$ipsaya" | awk '{print $3}')
 if [[ $date_list < $useexp ]]; then
 echo -ne
 else
