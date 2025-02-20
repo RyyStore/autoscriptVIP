@@ -1,25 +1,57 @@
 #!/bin/bash
-biji=`date +"%Y-%m-%d" -d "$dateFromServer"`
-MYIP=$(wget -qO- ifconfig.me)
+bij#!/bin/bash
+
+# Mendapatkan tanggal dari server
+biji=$(date +"%Y-%m-%d" -d "$dateFromServer")
+
+# Mengambil IP VPS dengan metode alternatif
+MYIP=$(curl -s https://api.ipify.org || curl -s https://checkip.amazonaws.com || curl -s https://icanhazip.com)
+
+# Cek apakah MYIP berhasil diambil
+if [[ -z "$MYIP" ]]; then
+    echo -e "\033[0;31mGagal mendapatkan IP VPS!\033[0m"
+    exit 1
+fi
+
+echo -e "\033[0;32mIP VPS: $MYIP\033[0m"
+
+# Mengatur warna
 colornow=$(cat /etc/rmbl/theme/color.conf)
 export NC="\e[0m"
-export yl='\033[0;33m';
+export yl='\033[0;33m'
 export RED="\033[0;31m"
-export COLOR1="$(cat /etc/rmbl/theme/$colornow | grep -w "TEXT" | cut -d: -f2|sed 's/ //g')"
-export COLBG1="$(cat /etc/rmbl/theme/$colornow | grep -w "BG" | cut -d: -f2|sed 's/ //g')"
-WH='\033[1;37m'
-tram=$( free -h | awk 'NR==2 {print $2}' )
-uram=$( free -h | awk 'NR==2 {print $3}' )
+export COLOR1="$(cat /etc/rmbl/theme/$colornow | grep -w "TEXT" | cut -d: -f2 | sed 's/ //g')"
+export COLBG1="$(cat /etc/rmbl/theme/$colornow | grep -w "BG" | cut -d: -f2 | sed 's/ //g')"
+export WH='\033[1;37m'
+
+# Mengambil informasi sistem
+tram=$(free -h | awk 'NR==2 {print $2}')
+uram=$(free -h | awk 'NR==2 {print $3}')
 ISP=$(cat /etc/xray/isp)
 CITY=$(cat /etc/xray/city)
 author=$(cat /etc/profil)
 DATE2=$(date -R | cut -d " " -f -5)
-Exp2=$(curl -sS https://raw.githubusercontent.com/RyyStore/permission/main/ip | grep $MYIP | awk '{print $3}')
-export RED='\033[0;31m'
-export GREEN='\033[0;32m'
+
+# Sumber data izin
+data_ip="https://raw.githubusercontent.com/RyyStore/permission/main/ip"
+
+# Mengambil data izin berdasarkan IP
+Exp2=$(curl -sS "$data_ip" | grep -w "$MYIP" | awk '{print $3}')
+
+# Cek apakah Exp2 ditemukan
+if [[ -z "$Exp2" ]]; then
+    echo -e "\033[0;31mIP tidak ditemukan dalam daftar izin!\033[0m"
+    exit 1
+fi
+
+echo -e "\033[0;32mExp2: $Exp2\033[0m"
+
+# Mendapatkan tanggal server dari Google
 data_server=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
 date_list=$(date +"%Y-%m-%d" -d "$data_server")
-data_ip="https://raw.githubusercontent.com/RyyStore/permission/main/ip"
+
+echo -e "\033[0;32mTanggal Server: $date_list\033[0m"
+
 # Fungsi untuk mengecek dan melakukan pembaruan otomatis
 function check_and_update() {
     # Mendapatkan commit terbaru dari repository GitHub
