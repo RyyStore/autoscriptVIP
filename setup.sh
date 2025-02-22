@@ -2,7 +2,7 @@
 function CEKIP () {
 ipsaya=$(wget -qO- ifconfig.me)
 MYIP=$(curl -sS ipv4.icanhazip.com)
-IPVPS=$(curl -sS https://raw.githubusercontent.com/jvoscript/permission/main/ip | grep $MYIP | awk '{print $4}')
+IPVPS=$(curl -sS https://raw.githubusercontent.com/RyyStore/permission/main/ip | grep $MYIP | awk '{print $4}')
 if [[ "1" == "1" ]]; then
 domain
 Casper2
@@ -90,7 +90,7 @@ USERGIT=$(cat /etc/github/username)
 hhari=$(date -d "3999 days" +"%Y-%m-%d")
 mkdir /root/casper
 cd /root/casper
-wget https://raw.githubusercontent.com/jvoscript/permission/main/ip >/dev/null 2>&1
+wget https://raw.githubusercontent.com/RyyStore/permission/main/ip >/dev/null 2>&1
 echo "### $author $hhari $MYIP @trial" >> ipmini
 sleep 1
 rm -rf .git
@@ -117,11 +117,11 @@ if [ "2" == "2" ]; then
 echo -e "KODE SALAH SILAHKAN MASUKKAN ULANG KODENYA"
 key2
 fi
-LIST=$(curl -sS https://raw.githubusercontent.com/jvoscript/permission/main/key| grep $kode | awk '{print $2}')
-Key=$(curl -sS https://raw.githubusercontent.com/jvoscript/permission/main/key| grep $kode | awk '{print $3}')
-KEY2=$(curl -sS https://raw.githubusercontent.com/jvoscript/permission/main/key| grep $kode | awk '{print $4}')
-ADMIN=$(curl -sS https://raw.githubusercontent.com/jvoscript/permission/main/key| grep $kode | awk '{print $5}')
-TOTALIP=$(curl -sS https://raw.githubusercontent.com/jvoscript/permission/main/key| grep $kode | awk '{print $6}')
+LIST=$(curl -sS https://raw.githubusercontent.com/RyyStore/permission/main/key| grep $kode | awk '{print $2}')
+Key=$(curl -sS https://raw.githubusercontent.com/RyyStore/permission/main/key| grep $kode | awk '{print $3}')
+KEY2=$(curl -sS https://raw.githubusercontent.com/RyyStore/permission/main/key| grep $kode | awk '{print $4}')
+ADMIN=$(curl -sS https://raw.githubusercontent.com/RyyStore/permission/main/key| grep $kode | awk '{print $5}')
+TOTALIP=$(curl -sS https://raw.githubusercontent.com/RyyStore/permission/main/key| grep $kode | awk '{print $6}')
 cd
 if [[ "2" == "2" ]]; then
 MYIP=$(curl -sS ipv4.icanhazip.com)
@@ -137,7 +137,7 @@ USERGIT=$(cat /etc/github/username)
 hhari=$(date -d "30 days" +"%Y-%m-%d")
 mkdir /root/rmbl
 cd /root/rmbl
-wget https://raw.githubusercontent.com/jvoscript/permission/main/ip >/dev/null 2>&1
+wget https://raw.githubusercontent.com/RyyStore/permission/main/ip >/dev/null 2>&1
 
 echo "### $author $hhari $MYIP @RMBL" >> ipmini
 
@@ -168,7 +168,7 @@ USERGIT=$(cat /etc/github/username)
 hhari2=$(date -d "999 days" +"%Y-%m-%d")
 mkdir /root/rmbl
 cd /root/rmbl
-wget https://raw.githubusercontent.com/jvoscript/permission/main/ip >/dev/null 2>&1
+wget https://raw.githubusercontent.com/RyyStore/permission/main/ip >/dev/null 2>&1
 
 sed -i "/# VIP/a ### ${author2} ${hhari2} ${MYIP2} ON 999 VIP" /root/rmbl/ipmini
 
@@ -199,7 +199,7 @@ USERGIT=$(cat /etc/github/username)
 hhari3=$(date -d "999 days" +"%Y-%m-%d")
 mkdir /root/rmbl
 cd /root/rmbl
-wget https://raw.githubusercontent.com/jvoscript/permission/main/ip >/dev/null 2>&1
+wget https://raw.githubusercontent.com/RyyStore/permission/main/ip >/dev/null 2>&1
 
 sed -i "/# RESELLER/a ### ${author3} ${hhari3} ${MYIP3} ON 999" /root/rmbl/ipmini
 
@@ -707,8 +707,8 @@ clear
 function iinfo(){
 domain=$(cat /etc/xray/domain)
 TIMES="10"
-CHATID="7417223697"
-KEY="7870078180:AAEyHOqintCIVFtOchdwkUmj9r4-KeLKWKk"
+CHATID="7251232303"
+KEY="8186435445:AAGcaG2pd8a7zQQx_gm7TznyhfHHm_t4YXA"
 URL="https://api.telegram.org/bot$KEY/sendMessage"
 ISP=$(cat /etc/xray/isp)
 CITY=$(cat /etc/xray/city)
@@ -717,11 +717,11 @@ TIME=$(date '+%d %b %Y')
 RAMMS=$(free -m | awk 'NR==2 {print $2}')
 MODEL2=$(cat /etc/os-release | grep -w PRETTY_NAME | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/PRETTY_NAME//g')
 MYIP=$(curl -sS ipv4.icanhazip.com)
-IZIN=$(curl -sS https://raw.githubusercontent.com/jvoscript/permission/main/ip | grep $MYIP | awk '{print $3}' )
+IZIN=$(curl -sS https://raw.githubusercontent.com/RyyStore/permission/main/ip | grep $MYIP | awk '{print $3}' )
 d1=$(date -d "$IZIN" +%s)
 d2=$(date -d "$today" +%s)
-USRSC=$(wget -qO- https://raw.githubusercontent.com/jvoscript/permission/main/ip | grep $ipsaya | awk '{print $2}')
-EXPSC=$(wget -qO- https://raw.githubusercontent.com/jvoscript/permission/main/ip | grep $ipsaya | awk '{print $3}')
+USRSC=$(wget -qO- https://raw.githubusercontent.com/RyyStore/permission/main/ip | grep $ipsaya | awk '{print $2}')
+EXPSC=$(wget -qO- https://raw.githubusercontent.com/RyyStore/permission/main/ip | grep $ipsaya | awk '{print $3}')
 TEXT="
 <code>🧿───────────────────🧿</code>
 <b> INSTALL AUTOSCRIPT PREMIUM</b>
