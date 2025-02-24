@@ -40,7 +40,7 @@ sleep 1
 echo -e "${COLOR1}[ INFO ] ${WH}Processing... "
 mkdir -p /root/backup
 echo -e "${COLOR1}[ INFO ] ${WH}Mohon Ditunggu... "
-wget -O /root/backup/ipmini https://raw.githubusercontent.com/jvoscript/permission/main/ip &> /dev/null
+wget -O /root/backup/ipmini https://raw.githubusercontent.com/RyyStore/permission/main/ip &> /dev/null
 cp -r /etc/passwd /root/backup/ &> /dev/null
 cp -r /etc/group /root/backup/ &> /dev/null
 cp -r /etc/shadow /root/backup/ &> /dev/null
