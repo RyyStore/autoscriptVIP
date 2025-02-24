@@ -1,5 +1,4 @@
 #!/bin/bash
-#!/bin/bash
 
 # Mendapatkan tanggal dari server
 biji=$(date +"%Y-%m-%d" -d "$dateFromServer")
