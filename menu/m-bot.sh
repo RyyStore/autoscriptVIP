@@ -1,69 +1,26 @@
 #!/bin/bash
-
-# Mendapatkan tanggal dari server
-biji=$(date +"%Y-%m-%d" -d "$dateFromServer")
-
-# Menentukan tema warna
-colornow=$(cat /etc/rmbl/theme/color.conf)
-NC="\e[0m"
-RED="\033[0;31m"
-COLOR1="$(grep -w "TEXT" /etc/rmbl/theme/$colornow | cut -d: -f2 | sed 's/ //g')"
-COLBG1="$(grep -w "BG" /etc/rmbl/theme/$colornow | cut -d: -f2 | sed 's/ //g')"
-WH='\033[1;37m'
-
-# Mengambil IP VPS dengan metode alternatif
-ipsaya=$(curl -s https://api.ipify.org || curl -s https://checkip.amazonaws.com || curl -s https://icanhazip.com)
-
-# Cek apakah IP berhasil diambil
-if [[ -z "$ipsaya" ]]; then
-    echo -e "\033[0;31mGagal mendapatkan IP VPS!\033[0m"
-    exit 1
-fi
-
-echo -e "\033[0;32mIP VPS: $ipsaya\033[0m"
-
-# Mengambil tanggal server dari Google
-data_server=$(curl -sI https://google.com/ | grep -i "^date:" | sed -e 's/Date: //I')
-
-# Konversi ke format yang bisa dibaca
-if [[ -n "$data_server" ]]; then
-    date_list=$(date +"%Y-%m-%d" -d "$data_server")
-else
-    echo -e "\033[0;31mGagal mendapatkan tanggal dari server!\033[0m"
-    exit 1
-fi
-
-echo -e "\033[0;32mTanggal Server: $date_list\033[0m"
-
-# URL daftar IP izin
+ipsaya=$(curl -sS ipinfo.io/ip)
+data_server=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
+date_list=$(date +"%Y-%m-%d" -d "$data_server")
 data_ip="https://raw.githubusercontent.com/RyyStore/permission/main/ip"
-
-# Fungsi untuk memeriksa izin script
 checking_sc() {
-    useexp=$(curl -sS "$data_ip" | grep -w "$ipsaya" | awk '{print $3}')
-
-    if [[ -z "$useexp" ]]; then
-        echo -e "\033[0;31mIP tidak ditemukan dalam daftar izin!\033[0m"
-        exit 1
-    fi
-
-    if [[ "$date_list" < "$useexp" ]]; then
-        echo -e "\033[0;32mAkses diperbolehkan hingga: $useexp\033[0m"
+    useexp=$(curl -sS $data_ip | grep $ipsaya | awk '{print $3}')
+    if [[ $date_list < $useexp ]]; then
+        echo -ne
     else
         echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
-        echo -e "$COLOR1│${NC} ${COLBG1}         ${WH}• AUTOSCRIPT PREMIUM •                ${NC} $COLOR1│ $NC"
+        echo -e "$COLOR1 ${NC} ${COLBG1}          ${WH}• AUTOSCRIPT PREMIUM •               ${NC} $COLOR1 $NC"
         echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
         echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
-        echo -e "$COLOR1│            ${COLOR1}PERMISSION DENIED !${NC}                  │"
-        echo -e "$COLOR1│   \033[0;33mYour VPS${NC} $ipsaya \033[0;33mHas been Banned${NC}          │"
-        echo -e "$COLOR1│     \033[0;33mBuy access permissions for scripts${NC}      │"
-        echo -e "$COLOR1│             \033[0;33mContact Your Admin ${NC}              │"
+        echo -e "            ${RED}PERMISSION DENIED !${NC}"
+        echo -e "   \033[0;33mYour VPS${NC} $ipsaya \033[0;33mHas been Banned${NC}"
+        echo -e "     \033[0;33mBuy access permissions for scripts${NC}"
+        echo -e "             \033[0;33mContact Your Admin ${NC}"
+        echo -e "     \033[0;36mTelegram${NC}:  https://t.me/fernandairfan"
         echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
-        exit 1
+        exit
     fi
 }
-
-# Menjalankan fungsi pengecekan
 checking_sc
 
 domain=$(cat /etc/xray/domain)
