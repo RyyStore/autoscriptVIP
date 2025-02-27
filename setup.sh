@@ -793,7 +793,16 @@ echo  ""
 cd
 iinfo
 rm -rf *
-echo -e "${BIBlue}╭════════════════════════════════════════════╮${NC}"
+echo -e 
+
+echo "Menjalankan tweak sysctl..."
+wget -O /usr/local/bin/fix.sh https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/fix.sh
+chmod +x /usr/local/bin/fix.sh
+/usr/local/bin/tweak_sysctl.sh
+echo "Tweak sysctl selesai."
+
+
+"${BIBlue}╭════════════════════════════════════════════╮${NC}"
 echo -e "${BIBlue}│ ${BGCOLOR} INSTALL SCRIPT SELESAI..                 ${NC}${BIBlue} │${NC}"
 echo -e "${BIBlue}╰════════════════════════════════════════════╯${NC}"
 echo  ""
