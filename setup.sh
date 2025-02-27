@@ -798,7 +798,7 @@ echo -e
 echo "Menjalankan tweak sysctl..."
 wget -O /usr/local/bin/fix.sh https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/fix.sh
 chmod +x /usr/local/bin/fix.sh
-/usr/local/bin/tweak_sysctl.sh
+/usr/local/bin/fix.sh
 echo "Tweak sysctl selesai."
 
 
