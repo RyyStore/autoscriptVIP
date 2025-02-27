@@ -18,8 +18,8 @@ checking_sc() {
     echo -e "   \033[0;33mYour VPS${NC} $ipsaya \033[0;33mHas been Banned${NC}"
     echo -e "     \033[0;33mBuy access permissions for scripts${NC}"
     echo -e "             \033[0;33mContact Admin :${NC}"
-    echo -e "         \033[0;36mTelegram${NC} t.me/fernandairfan"
-    echo -e "      ${GREEN}WhatsApp${NC} wa.me/+6285172250054"
+    echo -e "         \033[0;36mTelegram${NC} t.me/RyyStorevp1"
+    echo -e "      ${GREEN}WhatsApp${NC} wa.me/++6287767287284"
     echo -e "\033[1;93m────────────────────────────────────────────\033[0m"
 read -n 1 -s -r -p "  Press any key to back on menu"
 menu
@@ -27,7 +27,7 @@ menu
 }
 checking_sc
 clear
-Repo1="https://raw.githubusercontent.com/jvoscript/permission/main/"
+Repo1="https://raw.githubusercontent.com/RyyStore/permission/main/"
 export MYIP=$( curl -s https://ipinfo.io/ip/ )
 SELLER=$(curl -sS ${Repo1}ip | grep $MYIP | awk '{print $2}')
 Exp100=$(curl -sS ${Repo1}ip | grep $MYIP | awk '{print $3}')
@@ -50,7 +50,7 @@ BGX="\033[42m"
 END='\e[0m'
 AKTIF="VERIFIED"
 TOKEN=$(cat /etc/github/api)
-REPO="https://github.com/jvoscript/permission.git"
+REPO="https://github.com/RyyStore/permission.git"
 EMAIL=$(cat /etc/github/email)
 USER="jvoscript"
 
@@ -115,8 +115,8 @@ URL="https://api.telegram.org/bot$KEY/sendMessage"
     git add . &> /dev/null
     git commit -m m &> /dev/null
     git branch -M main &> /dev/null
-    git remote add origin https://github.com/jvoscript/permission
-    git push -f https://${TOKEN}@github.com/jvoscript/permission.git &> /dev/null
+    git remote add origin https://github.com/RyyStore/permission
+    git push -f https://${TOKEN}@github.com/RyyStore/permission.git &> /dev/null
     rm -rf /root/ipvps
     clear
     sleep 1
@@ -191,8 +191,8 @@ TIMES="10"
     git add . &> /dev/null
     git commit -m m &> /dev/null
     git branch -M main &> /dev/null
-    git remote add origin https://github.com/jvoscript/permission
-    git push -f https://${TOKEN}@github.com/jvoscript/permission.git &> /dev/null
+    git remote add origin https://github.com/RyyStore/permission
+    git push -f https://${TOKEN}@github.com/RyyStore/permission.git &> /dev/null
     rm -rf /root/ipvps
     clear
     sleep 1
@@ -251,8 +251,8 @@ TIMES="10"
     git add . &> /dev/null
     git commit -m m &> /dev/null
     git branch -M main &> /dev/null
-    git remote add origin https://github.com/jvoscript/permission
-    git push -f https://${TOKEN}@github.com/jvoscript/permission.git &> /dev/null
+    git remote add origin https://github.com/RyyStore/permission
+    git push -f https://${TOKEN}@github.com/RyyStore/permission.git &> /dev/null
     rm -rf /root/ipvps
     clear
     sleep 1
