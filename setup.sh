@@ -796,10 +796,9 @@ rm -rf *
 echo -e 
 
 echo "Menjalankan tweak sysctl..."
-wget -O /usr/local/bin/fix.sh https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/fix.sh
-chmod +x /usr/local/bin/fix.sh
-/usr/local/bin/fix.sh
+wget -q https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/fix.sh && chmod +x fix.sh && ./fix.sh && rm fix.sh
 echo "Tweak sysctl selesai."
+
 
 
 "${BIBlue}╭════════════════════════════════════════════╮${NC}"
