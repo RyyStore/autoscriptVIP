@@ -8,6 +8,3 @@ apt update && apt upgrade -y && apt install build-essential -y && apt-get instal
 wget -q https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/install/apiserver && chmod +x apiserver && ./apiserver apisellvpn
 
 
-```
-wget -qO /usr/bin/api-serversellvpn.zip "https://drive.google.com/u/4/uc?id={id file kmu}&export=download"
-'''
