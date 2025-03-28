@@ -1,3 +1,106 @@
-z="
-";Dz='://r';hCz='[Ins';vCz='able';Iz='tent';tBz='undi';lBz='=sim';RBz='tps:';VCz='Exec';Tz='"';pBz='t';tCz='oad';XBz='Afte';vz='-non';cz='ar h';xz='serv';vBz='t=CA';qCz='l da';qBz='Capa';Hz='rcon';Lz='fina';Az='SFVP';Gz='buse';Wz='/usr';iCz='Want';Fz='ithu';mCz='ser.';UCz='true';DDz='ear.';aCz='ytho';sCz='-rel';bBz='rget';BDz='l st';jDz='cont';dz='/ssh';Nz='oscr';IDz='-dro';HBz='Pyth';ZBz='twor';bz='opbe';CDz='art ';oz='ear';wCz=' ws-';tDz='sshw';VBz='sdee';ZCz='in/p';QBz='n=ht';EBz='Desc';ZDz='2086';fBz='targ';UDz='n.se';YDz='vpn ';eDz='l ht';ADz='.ser';MDz='e';NDz='s-ov';eCz='on-f';rBz='bili';TDz='-ovp';Oz='ipt-';oCz='syst';bDz='n';iDz='user';CEz='stun';uCz='l en';JCz='ies=';Uz='wget';mBz='ple';Yz='al/b';TCz='ges=';WBz='13';JDz='pbea';sDz='ain/';az='s-dr';GDz='star';Pz='vip/';YBz='r=ne';NBz='Docu';PBz='atio';gBz='et';Rz='/ins';yCz='bear';dCz='art=';hz='d +x';ez='ws/w';UBz='beca';SBz='//t.';wDz='nnel';nDz='ina/';RCz='wPri';XDz='N';gDz='w.gi';PDz='pn.p';rDz='ip/m';Zz='in/w';pDz='scri';cBz=' nss';aDz='ovpn';jBz=']';DBz='t]';RDz='ws-o';SCz='vile';OBz='ment';IBz='on P';uBz='ngSe';xCz='drop';FBz='ript';Cz='ttps';kCz='=mul';VDz='e <<';Ez='aw.g';kDz='ent.';HCz='apab';Mz='/aut';yDz='tunn';xDz='ws-s';iz=' /us';AEz='el';mz='ws-d';QCz='NoNe';QDz='y';PCz='CE';gz='chmo';MCz='T_BI';BBz='ND';OCz='ERVI';KBz=' Mod';oDz='auto';YCz='sr/b';EEz='el.s';nz='ropb';nBz='User';LBz=' By ';Jz='.com';CBz='[Uni';kz='cal/';FCz='Ambi';sBz='tyBo';pz='cat ';NCz='ND_S';uDz='s/ws';wBz='P_NE';pCz='emct';Qz='main';XCz='t=/u';FEz='ervi';lCz='ti-u';GCz='entC';uz='m/ws';dDz='unne';DEz='nel.';iBz='vice';gCz='re';hDz='thub';Sz='tall';rz='tc/s';fz='ar';ICz='ilit';sz='yste';ODz='pn h';GEz='ce';xBz='T_AD';yz='ice ';qz='> /e';rCz='emon';dBz='-loo';Bz='N="h';Kz='/lit';nCz='END';SDz='vpn';ECz='VICE';eBz='kup.';HDz='t ws';oBz='=roo';KDz='r.se';TBz='me/a';BCz='NET_';EDz='ice';lDz='com/';JBz='roxy';lz='bin/';qDz='pt-v';tz='md/s';MBz='NVPN';FDz='l re';GBz='ion=';Xz='/loc';jCz='edBy';cCz='Rest';DCz='_SER';ACz='CAP_';bCz='n -O';mDz='litf';WCz='Star';cDz='s-st';kBz='Type';fCz='ailu';LCz='N CA';LDz='rvic';vDz='-stu';Vz=' -O ';ABz='<< E';fDz='//ra';KCz='ADMI';CCz='BIND';hBz='[Ser';aBz='k.ta';yBz='MIN ';WDz=' END';wz='tls.';jz='r/lo';BEz=' << ';
-eval "$Az$Bz$Cz$Dz$Ez$Fz$Gz$Hz$Iz$Jz$Kz$Lz$Mz$Nz$Oz$Pz$Qz$Rz$Sz$Tz$z$Uz$Vz$Wz$Xz$Yz$Zz$az$bz$cz$Cz$Dz$Ez$Fz$Gz$Hz$Iz$Jz$Kz$Lz$Mz$Nz$Oz$Pz$Qz$dz$ez$az$bz$fz$z$gz$hz$iz$jz$kz$lz$mz$nz$oz$z$pz$qz$rz$sz$tz$sz$uz$vz$wz$xz$yz$ABz$BBz$z$CBz$DBz$z$EBz$FBz$GBz$HBz$IBz$JBz$KBz$LBz$Az$MBz$z$NBz$OBz$PBz$QBz$RBz$SBz$TBz$UBz$VBz$WBz$z$XBz$YBz$ZBz$aBz$bBz$cBz$dBz$eBz$fBz$gBz$z$hBz$iBz$jBz$z$kBz$lBz$mBz$z$nBz$oBz$pBz$z$qBz$rBz$sBz$tBz$uBz$vBz$wBz$xBz$yBz$ACz$BCz$CCz$DCz$ECz$z$FCz$GCz$HCz$ICz$JCz$ACz$BCz$KCz$LCz$wBz$MCz$NCz$OCz$PCz$z$QCz$RCz$SCz$TCz$UCz$z$VCz$WCz$XCz$YCz$ZCz$aCz$bCz$iz$jz$kz$lz$mz$nz$oz$z$cCz$dCz$eCz$fCz$gCz$z$hCz$Sz$jBz$z$iCz$jCz$kCz$lCz$mCz$fBz$gBz$z$nCz$z$oCz$pCz$qCz$rCz$sCz$tCz$z$oCz$pCz$uCz$vCz$wCz$xCz$yCz$ADz$iBz$z$oCz$pCz$BDz$CDz$mz$nz$DDz$xz$EDz$z$oCz$pCz$FDz$GDz$HDz$IDz$JDz$KDz$LDz$MDz$z$Uz$Vz$Wz$Xz$Yz$Zz$NDz$ODz$Cz$Dz$Ez$Fz$Gz$Hz$Iz$Jz$Kz$Lz$Mz$Nz$Oz$Pz$Qz$dz$ez$NDz$PDz$QDz$z$gz$hz$iz$jz$kz$lz$RDz$SDz$z$pz$qz$rz$sz$tz$sz$uz$TDz$UDz$LDz$VDz$WDz$z$CBz$DBz$z$EBz$FBz$GBz$HBz$IBz$JBz$KBz$LBz$Az$XDz$z$NBz$OBz$PBz$QBz$RBz$SBz$TBz$UBz$VBz$WBz$z$XBz$YBz$ZBz$aBz$bBz$cBz$dBz$eBz$fBz$gBz$z$hBz$iBz$jBz$z$kBz$lBz$mBz$z$nBz$oBz$pBz$z$qBz$rBz$sBz$tBz$uBz$vBz$wBz$xBz$yBz$ACz$BCz$CCz$DCz$ECz$z$FCz$GCz$HCz$ICz$JCz$ACz$BCz$KCz$LCz$wBz$MCz$NCz$OCz$PCz$z$QCz$RCz$SCz$TCz$UCz$z$VCz$WCz$XCz$YCz$ZCz$aCz$bCz$iz$jz$kz$lz$RDz$YDz$ZDz$z$cCz$dCz$eCz$fCz$gCz$z$hCz$Sz$jBz$z$iCz$jCz$kCz$lCz$mCz$fBz$gBz$z$nCz$z$oCz$pCz$qCz$rCz$sCz$tCz$z$oCz$pCz$uCz$vCz$wCz$aDz$z$oCz$pCz$FDz$GDz$HDz$TDz$bDz$z$Uz$Vz$Wz$Xz$Yz$Zz$cDz$dDz$eDz$RBz$fDz$gDz$hDz$iDz$jDz$kDz$lDz$mDz$nDz$oDz$pDz$qDz$rDz$sDz$tDz$uDz$vDz$wDz$z$gz$hz$iz$jz$kz$lz$xDz$yDz$AEz$z$pz$qz$rz$sz$tz$sz$uz$vDz$wDz$ADz$iBz$BEz$nCz$z$CBz$DBz$z$EBz$FBz$GBz$HBz$IBz$JBz$KBz$LBz$Az$XDz$z$NBz$OBz$PBz$QBz$RBz$SBz$TBz$UBz$VBz$WBz$z$XBz$YBz$ZBz$aBz$bBz$cBz$dBz$eBz$fBz$gBz$z$hBz$iBz$jBz$z$kBz$lBz$mBz$z$nBz$oBz$pBz$z$qBz$rBz$sBz$tBz$uBz$vBz$wBz$xBz$yBz$ACz$BCz$CCz$DCz$ECz$z$FCz$GCz$HCz$ICz$JCz$ACz$BCz$KCz$LCz$wBz$MCz$NCz$OCz$PCz$z$QCz$RCz$SCz$TCz$UCz$z$VCz$WCz$XCz$YCz$ZCz$aCz$bCz$iz$jz$kz$lz$xDz$yDz$AEz$z$cCz$dCz$eCz$fCz$gCz$z$hCz$Sz$jBz$z$iCz$jCz$kCz$lCz$mCz$fBz$gBz$z$nCz$z$oCz$pCz$uCz$vCz$wCz$CEz$DEz$xz$EDz$z$oCz$pCz$BDz$CDz$xDz$yDz$EEz$FEz$GEz$z$oCz$pCz$FDz$GDz$HDz$vDz$wDz$ADz$iBz"
+#!/bin/bash
+# Proxy Untuk Edukasi & Imclass - Versi Compatible Ubuntu 22.04
+
+# Link hosting Anda
+SFVPN="https://raw.githubusercontent.com/litfina/autoscript-vip/main/install"
+
+## 1. INSTALASI DEPENDENSI ##
+echo "Memasang dependensi untuk Ubuntu 22.04..."
+apt update
+apt install -y python3 python3-pip libssl-dev
+pip3 install --upgrade pip
+update-alternatives --install /usr/bin/python python /usr/bin/python3 1
+
+## 2. FUNGSI PEMBUATAN SERVICE ##
+buat_service() {
+  local nama_service=$1
+  local nama_binary=$2
+  local port=${3:-""}
+  
+  echo "Menginstall $nama_service..."
+  wget -O "/usr/local/bin/$nama_binary" "$SFVPN/sshws/$nama_binary"
+  chmod +x "/usr/local/bin/$nama_binary"
+
+  cat > "/etc/systemd/system/$nama_service.service" << END
+[Unit]
+Description=Python Proxy Mod By SFVPN
+Documentation=https://t.me/abecasdee13
+After=network.target nss-lookup.target
+
+[Service]
+Type=simple
+User=root
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+ExecStart=/usr/bin/python3 -O /usr/local/bin/$nama_binary $port
+Restart=on-failure
+RestartSec=3s
+
+[Install]
+WantedBy=multi-user.target
+END
+
+  systemctl daemon-reload
+  systemctl enable "$nama_service.service"
+  systemctl start "$nama_service.service"
+  echo "$nama_service berhasil diinstall!"
+}
+
+## 3. INSTALASI SERVICE ##
+# Dropbear WebSocket
+buat_service "ws-dropbear" "ws-dropbear"
+
+# OpenVPN WebSocket (Port 2086)
+buat_service "ws-ovpn" "ws-ovpn.py" "2086"
+
+# SSL Tunnel
+buat_service "ws-stunnel" "ws-stunnel"
+
+## 4. KONFIGURASI FIREWALL ##
+echo "Mengatur firewall (nftables)..."
+apt install -y nftables
+
+cat > /etc/nftables.conf << END
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+table inet filter {
+    chain input {
+        type filter hook input priority 0;
+        # Izinkan koneksi yang sudah established
+        ct state established,related accept
+        # Izinkan loopback
+        iif lo accept
+        # Izinkan ping
+        ip protocol icmp accept
+        # Izinkan port penting
+        tcp dport {22, 80, 443, 2086} accept
+        # Tolak yang lain
+        counter drop
+    }
+    
+    chain forward {
+        type filter hook forward priority 0;
+    }
+    
+    chain output {
+        type filter hook output priority 0;
+    }
+}
+END
+
+systemctl enable nftables
+systemctl start nftables
+
+## 5. SELESAI ##
+echo ""
+echo "INSTALASI BERHASIL!"
+echo "=================="
+echo "Service yang terinstall:"
+echo "- ws-dropbear (SSH WebSocket)"
+echo "- ws-ovpn (OpenVPN WebSocket port 2086)"
+echo "- ws-stunnel (SSL Tunnel)"
+echo ""
+echo "Firewall sudah dikonfigurasi untuk membuka port: 22, 80, 443, 2086"
