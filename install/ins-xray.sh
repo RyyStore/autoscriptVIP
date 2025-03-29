@@ -112,6 +112,28 @@ cat > /etc/xray/config.json << END
       },
       "tag": "api"
     },
+    {
+      "listen": "0.0.0.0",
+      "port": 25431,
+      "protocol": "trojan",
+      "settings": {
+          "decryption":"none",
+          "clients": [
+             {
+               "password": "${uuid}"
+#trojanntls
+             }
+          ],
+          "udp": true
+       },
+       "streamSettings": {
+         "network": "tcp",
+         "security": "none",
+         "tcpSettings": {
+           "acceptProxyProtocol": true
+         }
+       }
+    },
    {
      "listen": "127.0.0.1",
      "port": "14016",
@@ -461,7 +483,7 @@ sed -i '$ iproxy_set_header Upgrade \$http_upgrade;' /etc/nginx/conf.d/xray.conf
 sed -i '$ iproxy_set_header Connection "upgrade";' /etc/nginx/conf.d/xray.conf
 sed -i '$ iproxy_set_header Host \$http_host;' /etc/nginx/conf.d/xray.conf
 sed -i '$ i}' /etc/nginx/conf.d/xray.conf
-# TROJAN NONTLS
+
 sed -i '$ ilocation = /trojan-ntls' /etc/nginx/conf.d/xray.conf
 sed -i '$ i{' /etc/nginx/conf.d/xray.conf
 sed -i '$ iproxy_redirect off;' /etc/nginx/conf.d/xray.conf
