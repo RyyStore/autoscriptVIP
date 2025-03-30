@@ -4,7 +4,7 @@
 # Link Hosting Kalian
 SFVPN="https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/install"
 
-wget -O /usr/local/bin/ws-dropbear https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/sshws/ws-dropbear
+wget -O /usr/local/bin/ws-dropbear https://raw.githubusercontent.com/litfina/autoscript-vip/main/sshws/ws-dropbear
 chmod +x /usr/local/bin/ws-dropbear
 
 # Installing Service
