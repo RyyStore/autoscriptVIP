@@ -1171,87 +1171,135 @@ m-trojan
 }
 function hapus-trojan-expired() {
     clear
-    echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
-    echo -e "$COLOR1│${NC} ${COLBG1}       ${WH}• HAPUS OTOMATIS AKUN TROJAN EXPIRED • ${NC} $COLOR1│ $NC"
-    echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
-    
-    # Ambil tanggal hari ini (YYYY-MM-DD)
-    hari_ini=$(date +"%Y-%m-%d")
-    echo -e "$COLOR1│${NC} ${WH}Tanggal hari ini: $hari_ini${NC}"
-    
-    # Cari akun yang sudah expired
-    akun_expired=$(grep -E "^#tr " "/etc/xray/config.json" | awk -v today="$hari_ini" '$3 < today {print $2,$3,$4}')
-    
-    if [[ -z "$akun_expired" ]]; then
-        echo -e "$COLOR1│${NC} ${WH}Tidak ada akun Trojan yang expired${NC}"
-        echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
-        read -n 1 -s -r -p "Tekan sembarang tombol untuk kembali"
+    echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}" | tee -a /var/log/trojan_cleanup.log
+    echo -e "$COLOR1│${NC} ${COLBG1}      ${WH}• Deleting Expired Trojan Accounts •     ${NC} $COLOR1│ $NC" | tee -a /var/log/trojan_cleanup.log
+    echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}" | tee -a /var/log/trojan_cleanup.log
+    echo -e "" | tee -a /var/log/trojan_cleanup.log
+
+    # Backup config sebelum modifikasi
+    backup_file="/etc/xray/config.json.backup.$(date +"%Y%m%d%H%M%S")"
+    cp /etc/xray/config.json "$backup_file"
+    echo -e "$COLOR1│${NC} ${WH}Backup created: $backup_file${NC}" | tee -a /var/log/trojan_cleanup.log
+
+    # Ambil tanggal saat ini dalam format epoch
+    current_date=$(date +%s)
+    echo -e "$COLOR1│${NC} ${WH}Current date: $(date -d @$current_date +"%Y-%m-%d") (epoch: $current_date)${NC}" | tee -a /var/log/trojan_cleanup.log
+
+    # Ambil daftar akun trojan dari config
+    mapfile -t trojan_accounts < <(grep -E "^#tr " "/etc/xray/config.json")
+
+    if [[ ${#trojan_accounts[@]} -eq 0 ]]; then
+        echo -e "$COLOR1│${NC} ${WH}No Trojan accounts found!${NC}" | tee -a /var/log/trojan_cleanup.log
+        echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}" | tee -a /var/log/trojan_cleanup.log
+        read -n 1 -s -r -p "Press any key to back on menu"
         m-trojan
         return
     fi
-    
-    # Hitung jumlah akun expired
-    jumlah=$(echo "$akun_expired" | wc -l)
-    echo -e "$COLOR1│${NC} ${WH}Ditemukan $jumlah akun Trojan yang sudah expired:${NC}"
-    echo "$akun_expired" | awk '{print "│ " $1 " - Expired: " $2}'
-    echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
-    
-    # Konfirmasi penghapusan
-    read -p "Apakah Anda yakin ingin menghapus $jumlah akun expired? [y/N] " confirm
-    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
-        echo "Penghapusan dibatalkan"
-        read -n 1 -s -r -p "Tekan sembarang tombol untuk kembali"
-        m-trojan
-        return
-    fi
-    
-    # Proses penghapusan
-    terhapus=0
-    while read -r user exp uuid; do
-        # Debug: Tampilkan data yang akan dihapus
-        echo -e "$COLOR1│${NC} ${WH}Memproses: $user (Exp: $exp)${NC}"
-        
-        # Hapus dari config.json (versi lebih robust)
-        sed -i "/^#tr $user $exp $uuid/,/^},{/d" /etc/xray/config.json
-        sed -i "/^#trg $user $exp/,/^},{/d" /etc/xray/config.json
-        
-        # Hapus file terkait
-        rm -f /etc/trojan/${user}IP >/dev/null 2>&1
-        rm -f /home/vps/public_html/trojan-$user.txt >/dev/null 2>&1
-        rm -f /etc/trojan/${user} >/dev/null 2>&1
-        
-        # Backup ke file deleted
-        echo "### $user $exp $uuid" >> /etc/trojan/akundelete
-        
-        terhapus=$((terhapus+1))
-        
-        # Kirim notifikasi
-        PESAN="
+
+    deleted=0
+    for account in "${trojan_accounts[@]}"; do
+        # Ekstrak username, tanggal, dan UUID
+        user=$(echo "$account" | awk '{print $2}')
+        exp_date=$(echo "$account" | awk '{print $3}')
+        uuid=$(echo "$account" | awk '{print $4}')
+
+        # Validasi tanggal
+        exp_seconds=$(date -d "$exp_date" +%s 2>/dev/null)
+        if [[ $? -ne 0 ]]; then
+            echo -e "$COLOR1│${NC} ${RED}Invalid date format for user: $user, date: $exp_date${NC}" | tee -a /var/log/trojan_cleanup.log
+            continue
+        fi
+
+        echo -e "$COLOR1│${NC} ${WH}Checking user: $user, Exp: $exp_date, UUID: $uuid${NC}" | tee -a /var/log/trojan_cleanup.log
+
+        # Periksa jika akun sudah kadaluarsa
+        if [[ $exp_seconds -lt $current_date ]]; then
+            echo -e "$COLOR1│${NC} ${YELLOW}Deleting account: $user (Expired: $exp_date)${NC}" | tee -a /var/log/trojan_cleanup.log
+
+            # Simpan ke file akundelete
+            echo "### $user $exp_date $uuid" >> /etc/trojan/akundelete
+
+            # Hapus entri dari config.json dengan presisi tinggi
+            # 1. Hapus bagian trojan-ws (#tr)
+            sed -i "/^#tr $user $exp_date $uuid/,/^},{/d" /etc/xray/config.json
+            
+            # 2. Hapus bagian trojan-grpc (#trg)
+            sed -i "/^#trg $user $exp_date/,/^},{/d" /etc/xray/config.json
+
+            # Hapus file terkait
+            rm -f /etc/trojan/${user}IP 2>/dev/null
+            rm -f /etc/trojan/${user} 2>/dev/null
+            rm -f /home/vps/public_html/trojan-$user.txt 2>/dev/null
+
+            # Kirim notifikasi ke Telegram
+            TEXT="
 <code>◇━━━━━━━━━━━━━━◇</code>
-<b>  HAPUS OTOMATIS AKUN TROJAN</b>
+<b>  XRAY TROJAN DELETED</b>
 <code>◇━━━━━━━━━━━━━━◇</code>
 <b>DOMAIN   :</b> <code>${domain}</code>
+<b>ISP      :</b> <code>$ISP $CITY</code>
 <b>USERNAME :</b> <code>$user</code>
-<b>EXPIRED  :</b> <code>$exp</code>
+<b>EXPIRED  :</b> <code>$exp_date</code>
 <code>◇━━━━━━━━━━━━━━◇</code>
-<i>Akun terhapus otomatis karena sudah expired...</i>
+<i>Account deleted due to expiration.</i>
 "
-        curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$PESAN&parse_mode=html" $URL >/dev/null
-        
-        if [ -e /etc/tele ]; then
-            echo "$PESAN" > /etc/notiftele
-            bash /etc/tele
+            curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
+
+            ((deleted++))
+        else
+            echo -e "$COLOR1│${NC} ${WH}User: $user is still active until $exp_date${NC}" | tee -a /var/log/trojan_cleanup.log
         fi
-        
-    done <<< "$akun_expired"
+    done
+
+    # Verifikasi perubahan
+    config_lines=$(grep -E "^#tr " "/etc/xray/config.json" | wc -l)
+    echo -e "$COLOR1│${NC} ${WH}Remaining Trojan accounts: $config_lines${NC}" | tee -a /var/log/trojan_cleanup.log
+
+    # Restart xray dengan verifikasi
+    systemctl restart xray
+    if systemctl is-active --quiet xray; then
+        echo -e "$COLOR1│${NC} ${WH}Xray service restarted successfully${NC}" | tee -a /var/log/trojan_cleanup.log
+    else
+        echo -e "$COLOR1│${NC} ${RED}Failed to restart Xray! Restoring backup...${NC}" | tee -a /var/log/trojan_cleanup.log
+        cp "$backup_file" /etc/xray/config.json
+        systemctl restart xray
+    fi
+
+    if [[ $deleted -eq 0 ]]; then
+        echo -e "$COLOR1│${NC} ${WH}No expired accounts found.${NC}" | tee -a /var/log/trojan_cleanup.log
+    else
+        echo -e "$COLOR1│${NC} ${WH}Successfully deleted $deleted expired account(s).${NC}" | tee -a /var/log/trojan_cleanup.log
+    fi
+
+    echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}" | tee -a /var/log/trojan_cleanup.log
+    echo -e "" | tee -a /var/log/trojan_cleanup.log
     
-    # Restart layanan Xray
-    systemctl restart xray >/dev/null 2>&1
+    # Verifikasi akhir
+    echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
+    echo -e "$COLOR1│${NC} ${WH}Verification of remaining Trojan accounts:${NC}"
+    grep -E "^#tr " "/etc/xray/config.json" | awk '{print "│ " $2 " - Exp: " $3}'
+    echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
+    
+    read -n 1 -s -r -p "Press any key to back on menu"
+    m-trojan
+}
+
+# Fungsi untuk setup cronjob otomatis
+function setup_cron_trojan() {
+    cron_file="/etc/cron.d/auto_delete_expired_trojan"
+    echo "# Auto delete expired Trojan accounts daily at 00:00" > $cron_file
+    echo "SHELL=/bin/bash" >> $cron_file
+    echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" >> $cron_file
+    echo "0 0 * * * root /bin/bash $(readlink -f "$0") hapus-trojan-expired" >> $cron_file
+    chmod 644 $cron_file
+    systemctl restart cron >/dev/null 2>&1
     
     echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
-    echo -e "$COLOR1│${NC} ${WH}Berhasil menghapus $terhapus akun Trojan yang expired${NC}"
+    echo -e "$COLOR1│${NC} ${WH}Auto-delete cronjob has been configured${NC}"
+    echo -e "$COLOR1│${NC} ${WH}Will run daily at 00:00${NC}"
     echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
-    read -n 1 -s -r -p "Tekan sembarang tombol untuk kembali ke menu"
+    
+    read -n 1 -s -r -p "Press any key to back on menu"
     m-trojan
 }
 clear
