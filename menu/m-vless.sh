@@ -1225,81 +1225,81 @@ echo ""
 read -n 1 -s -r -p "Press any key to back on menu"
 m-vless
 }
-function auto-del-exp() {
+function hapus-akun-exp() {
     clear
     echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
-    echo -e "$COLOR1│${NC} ${COLBG1}       ${WH}• AUTO DELETE EXPIRED ACCOUNTS •      ${NC} $COLOR1│ $NC"
+    echo -e "$COLOR1│${NC} ${COLBG1}       ${WH}• HAPUS OTOMATIS AKUN EXPIRED •      ${NC} $COLOR1│ $NC"
     echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
     echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
     
-    # Get current date
-    today=$(date +%Y-%m-%d)
+    # Ambil tanggal hari ini
+    hari_ini=$(date +%Y-%m-%d)
     
-    # Check for expired accounts
-    expired_users=$(grep -E "^#vl " "/etc/xray/config.json" | cut -d ' ' -f 2,3 | awk -v today="$today" '$2 < today')
+    # Cari akun yang sudah expired
+    akun_expired=$(grep -E "^#vl " "/etc/xray/config.json" | cut -d ' ' -f 2,3 | awk -v today="$hari_ini" '$2 < today')
     
-    if [[ -z "$expired_users" ]]; then
-        echo -e "$COLOR1│${NC} ${WH}No expired accounts found${NC}"
+    if [[ -z "$akun_expired" ]]; then
+        echo -e "$COLOR1│${NC} ${WH}Tidak ada akun yang expired${NC}"
         echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
-        read -n 1 -s -r -p "Press any key to back on menu"
+        read -n 1 -s -r -p "Tekan sembarang tombol untuk kembali ke menu"
         m-vless
         return
     fi
     
-    # Count expired users
-    count=$(echo "$expired_users" | wc -l)
-    echo -e "$COLOR1│${NC} ${WH}Found $count expired account(s)${NC}"
+    # Hitung jumlah akun expired
+    jumlah=$(echo "$akun_expired" | wc -l)
+    echo -e "$COLOR1│${NC} ${WH}Ditemukan $jumlah akun yang sudah expired${NC}"
     echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
     echo ""
     
-    # Delete each expired account
-    deleted_count=0
+    # Hapus setiap akun yang expired
+    terhapus=0
     while read -r user exp; do
-        # Get UUID for the user
+        # Ambil UUID untuk user
         uuid=$(grep -E "^#vl $user $exp" "/etc/xray/config.json" | cut -d ' ' -f 4)
         
-        # Remove from config.json
+        # Hapus dari config.json
         sed -i "/^#vl $user $exp $uuid/,/^},{/d" /etc/xray/config.json
         sed -i "/^#vlg $user $exp/,/^},{/d" /etc/xray/config.json
         
-        # Remove related files
+        # Hapus file terkait
         rm -f /etc/vless/${user}IP >/dev/null 2>&1
         rm -f /home/vps/public_html/vless-$user.txt >/dev/null 2>&1
         rm -f /etc/vless/${user}login >/dev/null 2>&1
         rm -f /etc/vless/${user} >/dev/null 2>&1
         
-        # Add to deleted list
+        # Tambahkan ke daftar terhapus
         echo "### $user $exp $uuid" >> /etc/vless/akundelete
         
-        deleted_count=$((deleted_count+1))
+        terhapus=$((terhapus+1))
         
-        # Send notification
-        TEXT="
+        # Kirim notifikasi
+        PESAN="
 <code>◇━━━━━━━━━━━━━━◇</code>
-<b>  XRAY VLESS AUTO DELETE</b>
+<b>  HAPUS OTOMATIS AKUN VLESS</b>
 <code>◇━━━━━━━━━━━━━━◇</code>
 <b>DOMAIN   :</b> <code>${domain}</code>
 <b>USERNAME :</b> <code>$user</code>
 <b>EXPIRED  :</b> <code>$exp</code>
 <code>◇━━━━━━━━━━━━━━◇</code>
-<i>Account automatically deleted due to expiration...</i>
+<i>Akun terhapus otomatis karena sudah expired...</i>
 "
-        curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
+        curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$PESAN&parse_mode=html" $URL >/dev/null
         
         if [ -e /etc/tele ]; then
-            echo "$TEXT" > /etc/notiftele
+            echo "$PESAN" > /etc/notiftele
             bash /etc/tele
         fi
         
-    done <<< "$expired_users"
+    done <<< "$akun_expired"
     
-    # Restart Xray service
+    # Restart layanan Xray
     systemctl restart xray > /dev/null 2>&1
     
     echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
-    echo -e "$COLOR1│${NC} ${WH}Successfully deleted $deleted_count expired account(s)${NC}"
+    echo -e "$COLOR1│${NC} ${WH}Berhasil menghapus $terhapus akun yang expired${NC}"
     echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
-    read -n 1 -s -r -p "Press any key to back on menu"
+    read -n 1 -s -r -p "Tekan sembarang tombol untuk kembali ke menu"
     m-vless
 }
 clear
@@ -1314,8 +1314,8 @@ echo -e " $COLOR1│ $NC ${WH}[${COLOR1}03${WH}]${NC} ${COLOR1}• ${WH}RENEW AK
 echo -e " $COLOR1│ $NC ${WH}[${COLOR1}04${WH}]${NC} ${COLOR1}• ${WH}DELETE AKUN${NC}      ${WH}[${COLOR1}09${WH}]${NC} ${COLOR1}• ${WH}UNLOCK USER LOGIN${NC}  $COLOR1│ $NC"
 echo -e " $COLOR1│ $NC ${WH}[${COLOR1}05${WH}]${NC} ${COLOR1}• ${WH}CEK USER LOGIN${NC}   ${WH}[${COLOR1}10${WH}]${NC} ${COLOR1}• ${WH}UNLOCK USER QUOTA ${NC} $COLOR1│ $NC"
 echo -e " $COLOR1│ $NC ${WH}[${COLOR1}00${WH}]${NC} ${COLOR1}• ${WH}GO BACK${NC}          ${WH}[${COLOR1}11${WH}]${NC} ${COLOR1}• ${WH}RESTORE AKUN   ${NC}    $COLOR1│ $NC"
-echo -e " $COLOR1╰════════════════════════════════════════════════════╯${NC}"
 echo -e " $COLOR1│ $NC ${WH}[${COLOR1}12${WH}]${NC} ${COLOR1}• ${WH}HAPUS AKUN EXPIRED${NC}                      $COLOR1│ $NC"
+echo -e " $COLOR1╰════════════════════════════════════════════════════╯${NC}"
 echo -e " $COLOR1╭═════════════════════════ ${WH}BY${NC} ${COLOR1}═══════════════════════╮ ${NC}"
 printf "                      ${COLOR1}%3s${NC} ${WH}%0s${NC} ${COLOR1}%3s${NC}\n" "• " "$author" " •"
 echo -e " $COLOR1╰════════════════════════════════════════════════════╯${NC}"
