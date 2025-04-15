@@ -1225,7 +1225,7 @@ echo ""
 read -n 1 -s -r -p "Press any key to back on menu"
 m-vless
 }
-function hapus-akun-exp() {
+function auto-del-exp() {
     clear
     echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
     echo -e "$COLOR1│${NC} ${COLBG1}       ${WH}• HAPUS OTOMATIS AKUN EXPIRED •      ${NC} $COLOR1│ $NC"
