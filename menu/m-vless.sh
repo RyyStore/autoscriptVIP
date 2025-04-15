@@ -1232,49 +1232,53 @@ function auto-del-exp() {
     echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
     echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
     
-    # Ambil tanggal hari ini
+    # Ambil tanggal hari ini dalam format YYYY-MM-DD
     hari_ini=$(date +%Y-%m-%d)
+    echo -e "$COLOR1│${NC} ${WH}Tanggal hari ini: $hari_ini${NC}"
     
-    # Cari akun yang sudah expired
-    akun_expired=$(grep -E "^#vl " "/etc/xray/config.json" | cut -d ' ' -f 2,3 | awk -v today="$hari_ini" '$2 < today')
+    # Cari semua akun Vless dan ambil user + tanggal expired
+    akun_vless=$(grep -E "^#vl " "/etc/xray/config.json")
     
-    if [[ -z "$akun_expired" ]]; then
-        echo -e "$COLOR1│${NC} ${WH}Tidak ada akun yang expired${NC}"
+    if [[ -z "$akun_vless" ]]; then
+        echo -e "$COLOR1│${NC} ${WH}Tidak ada akun Vless yang ditemukan${NC}"
         echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
         read -n 1 -s -r -p "Tekan sembarang tombol untuk kembali ke menu"
         m-vless
         return
     fi
     
-    # Hitung jumlah akun expired
-    jumlah=$(echo "$akun_expired" | wc -l)
-    echo -e "$COLOR1│${NC} ${WH}Ditemukan $jumlah akun yang sudah expired${NC}"
-    echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
-    echo ""
-    
-    # Hapus setiap akun yang expired
+    # Hitung dan proses akun yang expired
+    jumlah_expired=0
     terhapus=0
-    while read -r user exp; do
-        # Ambil UUID untuk user
-        uuid=$(grep -E "^#vl $user $exp" "/etc/xray/config.json" | cut -d ' ' -f 4)
+    
+    while IFS= read -r line; do
+        # Ekstrak username dan tanggal expired
+        user=$(echo "$line" | awk '{print $2}')
+        exp=$(echo "$line" | awk '{print $3}')
+        uuid=$(echo "$line" | awk '{print $4}')
         
-        # Hapus dari config.json
-        sed -i "/^#vl $user $exp $uuid/,/^},{/d" /etc/xray/config.json
-        sed -i "/^#vlg $user $exp/,/^},{/d" /etc/xray/config.json
-        
-        # Hapus file terkait
-        rm -f /etc/vless/${user}IP >/dev/null 2>&1
-        rm -f /home/vps/public_html/vless-$user.txt >/dev/null 2>&1
-        rm -f /etc/vless/${user}login >/dev/null 2>&1
-        rm -f /etc/vless/${user} >/dev/null 2>&1
-        
-        # Tambahkan ke daftar terhapus
-        echo "### $user $exp $uuid" >> /etc/vless/akundelete
-        
-        terhapus=$((terhapus+1))
-        
-        # Kirim notifikasi
-        PESAN="
+        # Bandingkan tanggal expired dengan hari ini
+        if [[ "$exp" < "$hari_ini" ]]; then
+            echo -e "$COLOR1│${NC} ${WH}Akun $user sudah expired sejak $exp${NC}"
+            
+            # Hapus dari config.json
+            sed -i "/^#vl $user $exp $uuid/,/^},{/d" /etc/xray/config.json
+            sed -i "/^#vlg $user $exp/,/^},{/d" /etc/xray/config.json
+            
+            # Hapus file terkait
+            rm -f /etc/vless/${user}IP >/dev/null 2>&1
+            rm -f /home/vps/public_html/vless-$user.txt >/dev/null 2>&1
+            rm -f /etc/vless/${user}login >/dev/null 2>&1
+            rm -f /etc/vless/${user} >/dev/null 2>&1
+            
+            # Tambahkan ke daftar terhapus
+            echo "### $user $exp $uuid" >> /etc/vless/akundelete
+            
+            jumlah_expired=$((jumlah_expired+1))
+            terhapus=$((terhapus+1))
+            
+            # Kirim notifikasi
+            PESAN="
 <code>◇━━━━━━━━━━━━━━◇</code>
 <b>  HAPUS OTOMATIS AKUN VLESS</b>
 <code>◇━━━━━━━━━━━━━━◇</code>
@@ -1284,20 +1288,30 @@ function auto-del-exp() {
 <code>◇━━━━━━━━━━━━━━◇</code>
 <i>Akun terhapus otomatis karena sudah expired...</i>
 "
-        curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$PESAN&parse_mode=html" $URL >/dev/null
-        
-        if [ -e /etc/tele ]; then
-            echo "$PESAN" > /etc/notiftele
-            bash /etc/tele
+            curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$PESAN&parse_mode=html" $URL >/dev/null
+            
+            if [ -e /etc/tele ]; then
+                echo "$PESAN" > /etc/notiftele
+                bash /etc/tele
+            fi
         fi
-        
-    done <<< "$akun_expired"
+    done <<< "$akun_vless"
     
-    # Restart layanan Xray
-    systemctl restart xray > /dev/null 2>&1
+    # Restart layanan Xray jika ada yang dihapus
+    if [ $terhapus -gt 0 ]; then
+        systemctl restart xray > /dev/null 2>&1
+    fi
     
+    echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
     echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
-    echo -e "$COLOR1│${NC} ${WH}Berhasil menghapus $terhapus akun yang expired${NC}"
+    
+    if [ $jumlah_expired -eq 0 ]; then
+        echo -e "$COLOR1│${NC} ${WH}Tidak ada akun yang expired${NC}"
+    else
+        echo -e "$COLOR1│${NC} ${WH}Ditemukan $jumlah_expired akun expired${NC}"
+        echo -e "$COLOR1│${NC} ${WH}Berhasil menghapus $terhapus akun${NC}"
+    fi
+    
     echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
     read -n 1 -s -r -p "Tekan sembarang tombol untuk kembali ke menu"
     m-vless
