@@ -1588,83 +1588,120 @@ echo ""
 read -n 1 -s -r -p "Press any key to back on menu"
 m-vmess
 }
-function auto-del-vmess(){
+# (Bagian awal script Anda tetap sama hingga fungsi-fungsi lain)
+# ... (Kode Anda sebelumnya)
+
+# Tambahkan fungsi delete_expired_vmess
+function delete_expired_vmess() {
     clear
     echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
-    echo -e "$COLOR1│${NC} ${COLBG1}         ${WH}• Auto Delete Expired Vmess •         ${NC} $COLOR1│ $NC"
+    echo -e "$COLOR1│${NC} ${COLBG1}        ${WH}• Deleting Expired Vmess Accounts •      ${NC} $COLOR1│ $NC"
     echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
-    
-    # Mendapatkan tanggal saat ini
-    today=$(date +%Y-%m-%d)
-    expired_count=0
+    echo -e ""
 
-    # Membaca semua akun VMess dari config.json
-    while IFS=" " read -r marker user exp uuid; do
-        if [[ "$marker" == "#vmg" ]]; then
-            # Membandingkan tanggal kadaluarsa dengan tanggal saat ini
-            if [[ "$exp" < "$today" ]]; then
-                # Menyimpan informasi akun yang akan dihapus ke akundelete
-                echo "### $user $exp $uuid" >> /etc/vmess/akundelete
-                
-                # Menghapus entri dari config.json
-                sed -i "/^#vm $user $exp/,/^},{/d" /etc/xray/config.json
-                sed -i "/^#vmg $user $exp $uuid/,/^},{/d" /etc/xray/config.json
-                
-                # Menghapus file terkait
-                rm -f /etc/vmess/${user}IP
-                rm -f /etc/vmess/${user}
-                rm -f /home/vps/public_html/vmess-${user}.txt
-                
-                # Mengirim notifikasi ke Telegram
-                TEXT="
+    current_date=$(date +%s)
+    echo -e "$COLOR1│${NC} Current date (epoch): $current_date ${NC}"
+
+    mapfile -t vmess_accounts < <(grep -E "^#vmg " "/etc/xray/config.json" | awk '{print $2 " " $3 " " $4}')
+
+    if [[ ${#vmess_accounts[@]} -eq 0 ]]; then
+        echo -e "$COLOR1│${NC} No Vmess accounts found! ${NC}"
+        echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
+        read -n 1 -s -r -p "Press any key to back on menu"
+        m-vmess
+        return
+    fi
+
+    deleted=0
+    for account in "${vmess_accounts[@]}"; do
+        user=$(echo "$account" | awk '{print $1}')
+        exp_date=$(echo "$account" | awk '{print $2}')
+        uuid=$(echo "$account" | awk '{print $3}')
+
+        exp_seconds=$(date -d "$exp_date" +%s 2>/dev/null)
+        if [[ $? -ne 0 ]]; then
+            echo -e "$COLOR1│${NC} Invalid date format for user: $user, date: $exp_date ${NC}"
+            continue
+        fi
+
+        echo -e "$COLOR1│${NC} Checking user: $user, Exp: $exp_date ($exp_seconds) ${NC}"
+
+        if [[ $exp_seconds -lt $current_date ]]; then
+            echo -e "$COLOR1│${NC} Deleting account: $user (Expired: $exp_date) ${NC}"
+
+            echo "### $user $exp_date $uuid" >> /etc/vmess/akundelete
+
+            sed -i "/^#vmg $user $exp_date $uuid/,/^},{/d" /etc/xray/config.json
+            sed -i "/^#vm $user $exp_date/,/^},{/d" /etc/xray/config.json
+
+            rm -f /etc/vmess/${user}IP /etc/vmess/${user} /home/vps/public_html/vmess-$user.txt 2>/dev/null
+
+            TEXT="
 <code>◇━━━━━━━━━━━━━━◇</code>
-<b>  XRAY VMESS AUTO DELETE</b>
+<b>  XRAY VMESS DELETED</b>
 <code>◇━━━━━━━━━━━━━━◇</code>
 <b>DOMAIN   :</b> <code>${domain}</code>
 <b>ISP      :</b> <code>$ISP $CITY</code>
 <b>USERNAME :</b> <code>$user</code>
-<b>EXPIRED  :</b> <code>$exp</code>
+<b>EXPIRED  :</b> <code>$exp_date</code>
 <code>◇━━━━━━━━━━━━━━◇</code>
 <i>Account deleted due to expiration.</i>
 "
-                curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
-                
-                # Mengirim notifikasi ke Telegram kedua (jika ada)
-                curl -s --max-time $TIMES -d "chat_id=$CHATID2&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL2 >/dev/null
-                
-                ((expired_count++))
-            fi
+            curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
+
+            ((deleted++))
+        else
+            echo -e "$COLOR1│${NC} User: $user is still active until $exp_date ${NC}"
         fi
-    done < <(grep -E "^#vmg " /etc/xray/config.json)
+    done
 
-    # Restart service xray
-    systemctl restart xray > /dev/null 2>&1
-
-    # Menampilkan hasil
-    echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
-    if [[ $expired_count -eq 0 ]]; then
-        echo -e "$COLOR1│${NC} ${WH}No expired accounts found.${NC} $COLOR1│ $NC"
-    else
-        echo -e "$COLOR1│${NC} ${WH}Deleted $expired_count expired account(s).${NC} $COLOR1│ $NC"
+    systemctl restart xray >/dev/null 2>&1
+    if [[ $? -ne 0 ]]; then
+        echo -e "$COLOR1│${NC} Failed to restart xray service! ${NC}"
     fi
+
+    if [[ $deleted -eq 0 ]]; then
+        echo -e "$COLOR1│${NC} No expired accounts found. ${NC}"
+    else
+        echo -e "$COLOR1│${NC} Successfully deleted $deleted expired account(s). ${NC}"
+    fi
+
     echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
-    echo ""
+    echo -e ""
     read -n 1 -s -r -p "Press any key to back on menu"
     m-vmess
 }
-clear
+
+# Tambahkan fungsi setup_cronjob
+function setup_cronjob() {
+    cron_file="/etc/cron.d/delete_expired_vmess"
+    echo "# Delete expired Vmess accounts daily at 00:00" > $cron_file
+    echo "SHELL=/bin/sh" >> $cron_file
+    echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" >> $cron_file
+    echo "0 0 * * * root /bin/bash $0 delete_expired_vmess" >> $cron_file
+    chmod 644 $cron_file
+    systemctl restart cron >/dev/null 2>&1
+    echo -e "$COLOR1│${NC} Cronjob setup successfully. ${NC}"
+    read -n 1 -s -r -p "Press any key to back on menu"
+    m-vmess
+}
+
+# (Fungsi lain dari script Anda tetap sama)
+# ... (Kode Anda seperti add-vmess, trial-vmess, dll.)
+
+# Perbarui menu
 clear
 echo -e " $COLOR1╭════════════════════════════════════════════════════╮${NC}"
 echo -e " $COLOR1│${NC} ${COLBG1}            ${WH}• VMESS PANEL MENU •                  ${NC} $COLOR1│ $NC"
 echo -e " $COLOR1╰════════════════════════════════════════════════════╯${NC}"
 echo -e " $COLOR1╭════════════════════════════════════════════════════╮${NC}"
-echo -e " $COLOR1│ $NC ${WH}[${COLOR1}01${WH}]${NC} ${COLOR1}• ${WH}ADD AKUN${NC}         ${WH}[${COLOR1}07${WH}]${NC} ${COLOR1}• ${WH}CHANGE USER LIMIT${NC}  $COLOR1│ $NC"
-echo -e " $COLOR1│ $NC ${WH}[${COLOR1}02${WH}]${NC} ${COLOR1}• ${WH}TRIAL AKUN${NC}       ${WH}[${COLOR1}08${WH}]${NC} ${COLOR1}• ${WH}SETTING LOCK LOGIN${NC} $COLOR1│ $NC"
-echo -e " $COLOR1│ $NC ${WH}[${COLOR1}03${WH}]${NC} ${COLOR1}• ${WH}RENEW AKUN${NC}       ${WH}[${COLOR1}09${WH}]${NC} ${COLOR1}• ${WH}UNLOCK USER LOGIN${NC}  $COLOR1│ $NC"
-echo -e " $COLOR1│ $NC ${WH}[${COLOR1}04${WH}]${NC} ${COLOR1}• ${WH}DELETE AKUN${NC}      ${WH}[${COLOR1}10${WH}]${NC} ${COLOR1}• ${WH}UNLOCK USER QUOTA ${NC} $COLOR1│ $NC"
-echo -e " $COLOR1│ $NC ${WH}[${COLOR1}05${WH}]${NC} ${COLOR1}• ${WH}CEK USER LOGIN${NC}   ${WH}[${COLOR1}11${WH}]${NC} ${COLOR1}• ${WH}RESTORE AKUN   ${NC}    $COLOR1│ $NC"
-echo -e " $COLOR1│ $NC ${WH}[${COLOR1}06${WH}]${NC} ${COLOR1}• ${WH}CEK USER CONFIG${NC}  ${WH}[${COLOR1}12${WH}]${NC} ${COLOR1}• ${WH}AUTO DELETE EXPIRED${NC} $COLOR1│ $NC"
-echo -e " $COLOR1│ $NC ${WH}[${COLOR1}00${WH}]${NC} ${COLOR1}• ${WH}GO BACK${NC}                                        $COLOR1│ $NC"
+echo -e " $COLOR1│ $NC ${WH}[${COLOR1}01${WH}]${NC} ${COLOR1}• ${WH}ADD AKUN${NC}         ${WH}[${COLOR1}08${WH}]${NC} ${COLOR1}• ${WH}SETTING LOCK LOGIN${NC} $COLOR1│ $NC"
+echo -e " $COLOR1│ $NC ${WH}[${COLOR1}02${WH}]${NC} ${COLOR1}• ${WH}TRIAL AKUN${NC}       ${WH}[${COLOR1}09${WH}]${NC} ${COLOR1}• ${WH}UNLOCK USER LOGIN${NC}  $COLOR1│ $NC"
+echo -e " $COLOR1│ $NC ${WH}[${COLOR1}03${WH}]${NC} ${COLOR1}• ${WH}RENEW AKUN${NC}       ${WH}[${COLOR1}10${WH}]${NC} ${COLOR1}• ${WH}UNLOCK USER QUOTA ${NC} $COLOR1│ $NC"
+echo -e " $COLOR1│ $NC ${WH}[${COLOR1}04${WH}]${NC} ${COLOR1}• ${WH}DELETE AKUN${NC}      ${WH}[${COLOR1}11${WH}]${NC} ${COLOR1}• ${WH}RESTORE AKUN   ${NC}    $COLOR1│ $NC"
+echo -e " $COLOR1│ $NC ${WH}[${COLOR1}05${WH}]${NC} ${COLOR1}• ${WH}CEK USER LOGIN${NC}   ${WH}[${COLOR1}12${WH}]${NC} ${COLOR1}• ${WH}DELETE EXPIRED${NC}     $COLOR1│ $NC"
+echo -e " $COLOR1│ $NC ${WH}[${COLOR1}06${WH}]${NC} ${COLOR1}• ${WH}CEK USER CONFIG${NC}  ${WH}[${COLOR1}13${WH}]${NC} ${COLOR1}• ${WH}SETUP CRONJOB${NC}      $COLOR1│ $NC"
+echo -e " $COLOR1│ $NC ${WH}[${COLOR1}07${WH}]${NC} ${COLOR1}• ${WH}CHANGE USER LIMIT${NC} ${WH}[${COLOR1}00${WH}]${NC} ${COLOR1}• ${WH}GO BACK${NC}            $COLOR1│ $NC"
 echo -e " $COLOR1╰════════════════════════════════════════════════════╯${NC}"
 echo -e " $COLOR1╭═════════════════════════ ${WH}BY${NC} ${COLOR1}═══════════════════════╮ ${NC}"
 printf "                      ${COLOR1}%3s${NC} ${WH}%0s${NC} ${COLOR1}%3s${NC}\n" "• " "$author" " •"
@@ -1681,9 +1718,10 @@ case $opt in
 07 | 7) clear ; limit-vmess ;;
 08 | 8) clear ; login-vmess ;;
 09 | 9) clear ; lock-vmess ;;
-10 | 10) clear ; quota-user ;;
-11 | 11) clear ; res-user ;;
-12 | 12) clear ; auto-del-vmess ;;
+10) clear ; quota-user ;;
+11) clear ; res-user ;;
+12) clear ; delete_expired_vmess ;;
+13) clear ; setup_cronjob ;;
 00 | 0) clear ; menu ;;
 *) clear ; m-vmess ;;
 esac
