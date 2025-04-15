@@ -1226,10 +1226,15 @@ function hapus-trojan-expired() {
             # 2. Hapus bagian trojan-grpc (#trg)
             sed -i "/^#trg $user $exp_date/,/^},{/d" /etc/xray/config.json
 
-            # Hapus file terkait
+            # Hapus semua file terkait
             rm -f /etc/trojan/${user}IP 2>/dev/null
             rm -f /etc/trojan/${user} 2>/dev/null
-            rm -f /home/vps/public_html/trojan-$user.txt 2>/dev/null
+            rm -f /etc/trojan/${user}login 2>/dev/null
+            rm -f /home/vps/public_html/trojan-${user}.txt 2>/dev/null
+            rm -f /etc/trojan/akun/log-create-${user}.log 2>/dev/null
+
+            # Hapus cronjob trial terkait jika ada
+            rm -f /etc/cron.d/trialtrojan${user} 2>/dev/null
 
             # Kirim notifikasi ke Telegram
             TEXT="
@@ -1245,11 +1250,16 @@ function hapus-trojan-expired() {
 "
             curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
 
+            # Log ke file sistem
+            echo "Deleted user: $user, expired: $exp_date, UUID: $uuid at $(date)" >> /var/log/trojan_cleanup.log
             ((deleted++))
         else
             echo -e "$COLOR1│${NC} ${WH}User: $user is still active until $exp_date${NC}" | tee -a /var/log/trojan_cleanup.log
         fi
     done
+
+    # Bersihkan baris kosong di config.json
+    sed -i '/^$/d' /etc/xray/config.json
 
     # Verifikasi perubahan
     config_lines=$(grep -E "^#tr " "/etc/xray/config.json" | wc -l)
@@ -1263,6 +1273,11 @@ function hapus-trojan-expired() {
         echo -e "$COLOR1│${NC} ${RED}Failed to restart Xray! Restoring backup...${NC}" | tee -a /var/log/trojan_cleanup.log
         cp "$backup_file" /etc/xray/config.json
         systemctl restart xray
+        if systemctl is-active --quiet xray; then
+            echo -e "$COLOR1│${NC} ${WH}Backup restored and Xray restarted successfully${NC}" | tee -a /var/log/trojan_cleanup.log
+        else
+            echo -e "$COLOR1│${NC} ${RED}Failed to restart Xray even after restoring backup!${NC}" | tee -a /var/log/trojan_cleanup.log
+        fi
     fi
 
     if [[ $deleted -eq 0 ]]; then
@@ -1277,26 +1292,7 @@ function hapus-trojan-expired() {
     # Verifikasi akhir
     echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
     echo -e "$COLOR1│${NC} ${WH}Verification of remaining Trojan accounts:${NC}"
-    grep -E "^#tr " "/etc/xray/config.json" | awk '{print "│ " $2 " - Exp: " $3}'
-    echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
-    
-    read -n 1 -s -r -p "Press any key to back on menu"
-    m-trojan
-}
-
-# Fungsi untuk setup cronjob otomatis
-function setup_cron_trojan() {
-    cron_file="/etc/cron.d/auto_delete_expired_trojan"
-    echo "# Auto delete expired Trojan accounts daily at 00:00" > $cron_file
-    echo "SHELL=/bin/bash" >> $cron_file
-    echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" >> $cron_file
-    echo "0 0 * * * root /bin/bash $(readlink -f "$0") hapus-trojan-expired" >> $cron_file
-    chmod 644 $cron_file
-    systemctl restart cron >/dev/null 2>&1
-    
-    echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
-    echo -e "$COLOR1│${NC} ${WH}Auto-delete cronjob has been configured${NC}"
-    echo -e "$COLOR1│${NC} ${WH}Will run daily at 00:00${NC}"
+    grep -E "^#tr " "/etc/xray/config.json" | awk '{print "│ " $2 " - Exp: " $3}' || echo "│ No accounts remaining"
     echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
     
     read -n 1 -s -r -p "Press any key to back on menu"
