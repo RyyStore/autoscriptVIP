@@ -1591,22 +1591,24 @@ m-vmess
 # (Bagian awal script Anda tetap sama hingga fungsi-fungsi lain)
 # ... (Kode Anda sebelumnya)
 
-# Tambahkan fungsi delete_expired_vmess
+# Fungsi untuk menghapus akun Vmess yang sudah kadaluarsa
 function delete_expired_vmess() {
     clear
-    echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
-    echo -e "$COLOR1│${NC} ${COLBG1}        ${WH}• Deleting Expired Vmess Accounts •      ${NC} $COLOR1│ $NC"
-    echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
-    echo -e ""
+    echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}" | tee -a /var/log/vmess_cleanup.log
+    echo -e "$COLOR1│${NC} ${COLBG1}        ${WH}• Deleting Expired Vmess Accounts •      ${NC} $COLOR1│ $NC" | tee -a /var/log/vmess_cleanup.log
+    echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}" | tee -a /var/log/vmess_cleanup.log
+    echo -e "" | tee -a /var/log/vmess_cleanup.log
 
+    # Ambil tanggal saat ini dalam format epoch
     current_date=$(date +%s)
-    echo -e "$COLOR1│${NC} Current date (epoch): $current_date ${NC}"
+    echo -e "$COLOR1│${NC} Current date (epoch): $current_date ${NC}" | tee -a /var/log/vmess_cleanup.log
 
-    mapfile -t vmess_accounts < <(grep -E "^#vmg " "/etc/xray/config.json" | awk '{print $2 " " $3 " " $4}')
+    # Ambil daftar akun vmess dari config
+    mapfile -t vmess_accounts < <(grep -E "^#vmg " "/etc/xray/config.json")
 
     if [[ ${#vmess_accounts[@]} -eq 0 ]]; then
-        echo -e "$COLOR1│${NC} No Vmess accounts found! ${NC}"
-        echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
+        echo -e "$COLOR1│${NC} No Vmess accounts found! ${NC}" | tee -a /var/log/vmess_cleanup.log
+        echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}" | tee -a /var/log/vmess_cleanup.log
         read -n 1 -s -r -p "Press any key to back on menu"
         m-vmess
         return
@@ -1614,28 +1616,42 @@ function delete_expired_vmess() {
 
     deleted=0
     for account in "${vmess_accounts[@]}"; do
-        user=$(echo "$account" | awk '{print $1}')
-        exp_date=$(echo "$account" | awk '{print $2}')
-        uuid=$(echo "$account" | awk '{print $3}')
+        # Ekstrak username, tanggal, dan UUID (jika ada)
+        user=$(echo "$account" | awk '{print $2}')
+        exp_date=$(echo "$account" | awk '{print $3}')
+        uuid=$(echo "$account" | awk '{print $4}')
 
+        # Validasi tanggal
         exp_seconds=$(date -d "$exp_date" +%s 2>/dev/null)
         if [[ $? -ne 0 ]]; then
-            echo -e "$COLOR1│${NC} Invalid date format for user: $user, date: $exp_date ${NC}"
+            echo -e "$COLOR1│${NC} Invalid date format for user: $user, date: $exp_date ${NC}" | tee -a /var/log/vmess_cleanup.log
             continue
         fi
 
-        echo -e "$COLOR1│${NC} Checking user: $user, Exp: $exp_date ($exp_seconds) ${NC}"
+        echo -e "$COLOR1│${NC} Checking user: $user, Exp: $exp_date, UUID: ${uuid:-none} ${NC}" | tee -a /var/log/vmess_cleanup.log
 
+        # Periksa jika akun sudah kadaluarsa
         if [[ $exp_seconds -lt $current_date ]]; then
-            echo -e "$COLOR1│${NC} Deleting account: $user (Expired: $exp_date) ${NC}"
+            echo -e "$COLOR1│${NC} Deleting account: $user (Expired: $exp_date) ${NC}" | tee -a /var/log/vmess_cleanup.log
 
-            echo "### $user $exp_date $uuid" >> /etc/vmess/akundelete
+            # Simpan ke file akundelete
+            echo "### $user $exp_date ${uuid:-none}" >> /etc/vmess/akundelete
 
-            sed -i "/^#vmg $user $exp_date $uuid/,/^},{/d" /etc/xray/config.json
-            sed -i "/^#vm $user $exp_date/,/^},{/d" /etc/xray/config.json
+            # Hapus entri dari config berdasarkan format
+            if [[ -n "$uuid" ]]; then
+                # Format dengan UUID
+                sed -i "/^#vmg $user $exp_date $uuid/,/^},{/d" /etc/xray/config.json
+                sed -i "/^#vm $user $exp_date/,/^},{/d" /etc/xray/config.json
+            else
+                # Format tanpa UUID
+                sed -i "/^#vmg $user $exp_date$/,/^},{/d" /etc/xray/config.json
+                sed -i "/^#vm $user $exp_date/,/^},{/d" /etc/xray/config.json
+            fi
 
+            # Hapus file terkait
             rm -f /etc/vmess/${user}IP /etc/vmess/${user} /home/vps/public_html/vmess-$user.txt 2>/dev/null
 
+            # Kirim notifikasi ke Telegram
             TEXT="
 <code>◇━━━━━━━━━━━━━━◇</code>
 <b>  XRAY VMESS DELETED</b>
@@ -1651,28 +1667,29 @@ function delete_expired_vmess() {
 
             ((deleted++))
         else
-            echo -e "$COLOR1│${NC} User: $user is still active until $exp_date ${NC}"
+            echo -e "$COLOR1│${NC} User: $user is still active until $exp_date ${NC}" | tee -a /var/log/vmess_cleanup.log
         fi
     done
 
+    # Restart xray setelah penghapusan
     systemctl restart xray >/dev/null 2>&1
     if [[ $? -ne 0 ]]; then
-        echo -e "$COLOR1│${NC} Failed to restart xray service! ${NC}"
+        echo -e "$COLOR1│${NC} Failed to restart xray service! ${NC}" | tee -a /var/log/vmess_cleanup.log
     fi
 
     if [[ $deleted -eq 0 ]]; then
-        echo -e "$COLOR1│${NC} No expired accounts found. ${NC}"
+        echo -e "$COLOR1│${NC} No expired accounts found. ${NC}" | tee -a /var/log/vmess_cleanup.log
     else
-        echo -e "$COLOR1│${NC} Successfully deleted $deleted expired account(s). ${NC}"
+        echo -e "$COLOR1│${NC} Successfully deleted $deleted expired account(s). ${NC}" | tee -a /var/log/vmess_cleanup.log
     fi
 
-    echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
-    echo -e ""
+    echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}" | tee -a /var/log/vmess_cleanup.log
+    echo -e "" | tee -a /var/log/vmess_cleanup.log
     read -n 1 -s -r -p "Press any key to back on menu"
     m-vmess
 }
 
-# Tambahkan fungsi setup_cronjob
+# Fungsi untuk mengatur cronjob penghapusan otomatis
 function setup_cronjob() {
     cron_file="/etc/cron.d/delete_expired_vmess"
     echo "# Delete expired Vmess accounts daily at 00:00" > $cron_file
@@ -1689,7 +1706,7 @@ function setup_cronjob() {
 # (Fungsi lain dari script Anda tetap sama)
 # ... (Kode Anda seperti add-vmess, trial-vmess, dll.)
 
-# Perbarui menu
+# Perbarui menu (jika belum diperbarui)
 clear
 echo -e " $COLOR1╭════════════════════════════════════════════════════╮${NC}"
 echo -e " $COLOR1│${NC} ${COLBG1}            ${WH}• VMESS PANEL MENU •                  ${NC} $COLOR1│ $NC"
