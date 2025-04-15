@@ -1234,21 +1234,27 @@ function auto-del-exp() {
     today=$(date +%Y-%m-%d)
     echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
     echo -e "$COLOR1│${NC} ${WH}Tanggal hari ini: $today${NC}"
-    echo -e "$COLOR1├─────────────────────────────────────────────────┤${NC}"
+    echo -e "$COLOR1├──────────────────────��──────────────────────────┤${NC}"
     
     deleted_count=0
+    total_checked=0
     
     while IFS= read -r line; do
-        # Parse username dan tanggal expired
         user=$(echo "$line" | awk '{print $2}')
         exp=$(echo "$line" | awk '{print $3}')
+        total_checked=$((total_checked+1))
         
-        echo -e "$COLOR1│${NC} ${WH}Memeriksa: $user (Exp: $exp)${NC}"
+        echo -ne "$COLOR1│${NC} ${WH}Memeriksa: $user (Exp: $exp) "
         
-        if [[ "$exp" < "$today" ]]; then
-            echo -e "$COLOR1│${NC} ${RED}→ EXPIRED! Menghapus $user...${NC}"
+        # Konversi tanggal ke format epoch untuk perbandingan
+        exp_epoch=$(date -d "$exp" +%s)
+        today_epoch=$(date -d "$today" +%s)
+        
+        if [ "$exp_epoch" -lt "$today_epoch" ]; then
+            echo -e "${RED}→ EXPIRED!${NC}"
+            echo -e "$COLOR1│${NC} ${RED}Menghapus $user...${NC}"
             
-            # Hapus dari config.json (versi dengan dan tanpa UUID)
+            # Hapus dari config.json
             sed -i "/^#vl $user $exp/d" /etc/xray/config.json
             sed -i "/^#vlg $user $exp/d" /etc/xray/config.json
             
@@ -1263,29 +1269,30 @@ function auto-del-exp() {
             TEXT="<code>◇━━━━━━━━━━━━━━◇</code>
 <b>  AUTO DELETE VLESS</b>
 <code>◇━━━━━━━━━━━━━━◇</code>
-<b>DOMAIN :</b> <code>${domain}</code>
 <b>USER   :</b> <code>$user</code>
 <b>EXP    :</b> <code>$exp</code>
+<b>STATUS :</b> <code>DELETED</code>
 <code>◇━━━━━━━━━━━━━━◇</code>"
             curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
             
             deleted_count=$((deleted_count+1))
         else
-            echo -e "$COLOR1│${NC} ${WH}→ Masih aktif${NC}"
+            days_left=$(( (exp_epoch - today_epoch) / 86400 ))
+            echo -e "${WH}→ Aktif (${days_left} hari lagi)${NC}"
         fi
     done < <(grep "^#vl " /etc/xray/config.json)
     
+    echo -e "$COLOR1├─────────────────────────────────────────────────┤${NC}"
+    echo -e "$COLOR1│${NC} ${WH}Total diperiksa : $total_checked akun${NC}"
+    echo -e "$COLOR1│${NC} ${WH}Total terhapus  : $deleted_count akun${NC}"
+    
     if [ $deleted_count -gt 0 ]; then
         systemctl restart xray >/dev/null 2>&1
-        echo -e "$COLOR1├─────────────────────────────────────────────────┤${NC}"
-        echo -e "$COLOR1│${NC} ${WH}Restarting Xray...${NC}"
+        echo -e "$COLOR1│${NC} ${WH}Service Xray di-restart${NC}"
     fi
     
     echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
-    echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
-    echo -e "$COLOR1│${NC} ${WH}Total terhapus: $deleted_count akun${NC}"
-    echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
-    read -n 1 -s -r -p "Tekan sembarang tombol untuk kembali"
+    read -n 1 -s -r -p "Tekan sembarang tombol untuk kembali ke menu"
     m-vless
 }
 clear
