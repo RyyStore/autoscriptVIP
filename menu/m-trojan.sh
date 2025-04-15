@@ -1175,11 +1175,12 @@ function hapus-trojan-expired() {
     echo -e "$COLOR1│${NC} ${COLBG1}       ${WH}• HAPUS OTOMATIS AKUN TROJAN EXPIRED • ${NC} $COLOR1│ $NC"
     echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
     
-    # Ambil tanggal hari ini
+    # Ambil tanggal hari ini (YYYY-MM-DD)
     hari_ini=$(date +"%Y-%m-%d")
+    echo -e "$COLOR1│${NC} ${WH}Tanggal hari ini: $hari_ini${NC}"
     
     # Cari akun yang sudah expired
-    akun_expired=$(grep -E "^#tr " "/etc/xray/config.json" | awk '{print $2,$3}' | awk -v today="$hari_ini" '$2 < today')
+    akun_expired=$(grep -E "^#tr " "/etc/xray/config.json" | awk -v today="$hari_ini" '$3 < today {print $2,$3,$4}')
     
     if [[ -z "$akun_expired" ]]; then
         echo -e "$COLOR1│${NC} ${WH}Tidak ada akun Trojan yang expired${NC}"
@@ -1191,16 +1192,26 @@ function hapus-trojan-expired() {
     
     # Hitung jumlah akun expired
     jumlah=$(echo "$akun_expired" | wc -l)
-    echo -e "$COLOR1│${NC} ${WH}Ditemukan $jumlah akun Trojan yang sudah expired${NC}"
+    echo -e "$COLOR1│${NC} ${WH}Ditemukan $jumlah akun Trojan yang sudah expired:${NC}"
+    echo "$akun_expired" | awk '{print "│ " $1 " - Expired: " $2}'
     echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
+    
+    # Konfirmasi penghapusan
+    read -p "Apakah Anda yakin ingin menghapus $jumlah akun expired? [y/N] " confirm
+    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+        echo "Penghapusan dibatalkan"
+        read -n 1 -s -r -p "Tekan sembarang tombol untuk kembali"
+        m-trojan
+        return
+    fi
     
     # Proses penghapusan
     terhapus=0
-    while read -r user exp; do
-        # Ambil UUID untuk user
-        uuid=$(grep -E "^#tr $user $exp" "/etc/xray/config.json" | awk '{print $4}')
+    while read -r user exp uuid; do
+        # Debug: Tampilkan data yang akan dihapus
+        echo -e "$COLOR1│${NC} ${WH}Memproses: $user (Exp: $exp)${NC}"
         
-        # Hapus dari config.json
+        # Hapus dari config.json (versi lebih robust)
         sed -i "/^#tr $user $exp $uuid/,/^},{/d" /etc/xray/config.json
         sed -i "/^#trg $user $exp/,/^},{/d" /etc/xray/config.json
         
@@ -1235,7 +1246,7 @@ function hapus-trojan-expired() {
     done <<< "$akun_expired"
     
     # Restart layanan Xray
-    systemctl restart xray > /dev/null 2>&1
+    systemctl restart xray >/dev/null 2>&1
     
     echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
     echo -e "$COLOR1│${NC} ${WH}Berhasil menghapus $terhapus akun Trojan yang expired${NC}"
