@@ -1197,6 +1197,9 @@ function hapus-trojan-expired() {
     fi
 
     deleted=0
+    temp_config="/tmp/config.json.temp"
+    cp /etc/xray/config.json "$temp_config"
+
     for account in "${trojan_accounts[@]}"; do
         # Ekstrak username dan tanggal
         user=$(echo "$account" | awk '{print $2}')
@@ -1222,26 +1225,45 @@ function hapus-trojan-expired() {
         if [[ $exp_seconds -lt $current_date ]]; then
             echo -e "$COLOR1│${NC} ${YELLOW}Attempting to delete account: $user (Expired: $exp_date)${NC}" | tee -a /var/log/trojan_cleanup.log
 
-            # Simpan ke file akundelete
-            echo "### $user $exp_date $uuid" >> /etc/trojan/akundelete
+            # Log config sebelum penghapusan
+            echo "Before deletion for $user:" >> /var/log/trojan_cleanup.log
+            grep -A2 "^#tr $user $exp_date" /etc/xray/config.json >> /var/log/trojan_cleanup.log
 
-            # Verifikasi entri sebelum penghapusan
-            if grep -q "^#tr $user $exp_date" /etc/xray/config.json; then
-                # Hapus bagian trojan-ws (#tr)
-                sed -i "/^#tr $user $exp_date/,/^},{/d" /etc/xray/config.json
+            # Hapus entri trojan-ws (#tr) dari file sementara
+            if grep -q "^#tr $user $exp_date" "$temp_config"; then
+                # Hapus dari #tr hingga baris yang berisi "email": "$user"
+                sed -i "/^#tr $user $exp_date/,/\"email\": \"$user\"/d" "$temp_config"
             else
                 echo -e "$COLOR1│${NC} ${RED}Trojan-WS entry for $user not found in config.json${NC}" | tee -a /var/log/trojan_cleanup.log
+                continue
             fi
 
             # Hapus bagian trojan-grpc (#trg) jika ada
-            if grep -q "^#trg $user $exp_date" /etc/xray/config.json; then
-                sed -i "/^#trg $user $exp_date/,/^},{/d" /etc/xray/config.json
+            if grep -q "^#trg $user $exp_date" "$temp_config"; then
+                sed -i "/^#trg $user $exp_date/,/^},{/d" "$temp_config"
+                echo -e "$COLOR1│${NC} ${WH}Trojan-gRPC entry deleted for $user${NC}" | tee -a /var/log/trojan_cleanup.log
             else
                 echo -e "$COLOR1│${NC} ${WH}No Trojan-gRPC entry found for $user${NC}" | tee -a /var/log/trojan_cleanup.log
             fi
 
-            # Verifikasi bahwa entri telah dihapus
-            if ! grep -q "^#tr $user $exp_date" /etc/xray/config.json && ! grep -q "^#trg $user $exp_date" /etc/xray/config.json; then
+            # Perbaiki koma yang mungkin hilang setelah penghapusan
+            sed -i '/},$/! s/}$/},/' "$temp_config"
+            # Hapus koma berlebih sebelum penutup array
+            sed -i '/],$/! s/},$/}/' "$temp_config"
+
+            # Log config setelah penghapusan
+            echo "After deletion for $user:" >> /var/log/trojan_cleanup.log
+            grep -A2 "^#tr $user $exp_date" "$temp_config" >> /var/log/trojan_cleanup.log || echo "No entries found" >> /var/log/trojan_cleanup.log
+
+            # Validasi JSON
+            if jq . "$temp_config" >/dev/null 2>&1; then
+                # Jika valid, simpan ke file asli
+                mv "$temp_config" /etc/xray/config.json
+                echo -e "$COLOR1│${NC} ${WH}JSON valid, changes applied for $user${NC}" | tee -a /var/log/trojan_cleanup.log
+
+                # Simpan ke file akundelete
+                echo "### $user $exp_date $uuid" >> /etc/trojan/akundelete
+
                 # Hapus semua file terkait
                 rm -f /etc/trojan/${user}IP 2>/dev/null
                 rm -f /etc/trojan/${user} 2>/dev/null
@@ -1250,7 +1272,7 @@ function hapus-trojan-expired() {
                 rm -f /etc/trojan/akun/log-create-${user}.log 2>/dev/null
                 rm -f /etc/cron.d/trialtrojan${user} 2>/dev/null
 
-                # Kirim notifikasi ke Telegram hanya setelah penghapusan diverifikasi
+                # Kirim notifikasi ke Telegram
                 TEXT="
 <code>◇━━━━━━━━━━━━━━◇</code>
 <b>  XRAY TROJAN DELETED</b>
@@ -1268,12 +1290,18 @@ function hapus-trojan-expired() {
                 echo "Deleted user: $user, expired: $exp_date, UUID: $uuid at $(date)" >> /var/log/trojan_cleanup.log
                 ((deleted++))
             else
-                echo -e "$COLOR1│${NC} ${RED}Failed to delete account: $user from config.json${NC}" | tee -a /var/log/trojan_cleanup.log
+                echo -e "$COLOR1│${NC} ${RED}Invalid JSON format after deletion attempt for $user, skipping...${NC}" | tee -a /var/log/trojan_cleanup.log
+                # Pulihkan temp_config untuk iterasi berikutnya
+                cp /etc/xray/config.json "$temp_config"
+                continue
             fi
         else
             echo -e "$COLOR1│${NC} ${WH}User: $user is still active until $exp_date${NC}" | tee -a /var/log/trojan_cleanup.log
         fi
     done
+
+    # Bersihkan file sementara jika masih ada
+    rm -f "$temp_config" 2>/dev/null
 
     # Bersihkan baris kosong di config.json
     sed -i '/^$/d' /etc/xray/config.json
@@ -1281,12 +1309,6 @@ function hapus-trojan-expired() {
     # Verifikasi perubahan
     config_lines=$(grep -E "^#tr " "/etc/xray/config.json" | wc -l)
     echo -e "$COLOR1│${NC} ${WH}Remaining Trojan accounts: $config_lines${NC}" | tee -a /var/log/trojan_cleanup.log
-
-    # Validasi format JSON
-    if ! jq . /etc/xray/config.json >/dev/null 2>&1; then
-        echo -e "$COLOR1│${NC} ${RED}Invalid JSON format in config.json! Restoring backup...${NC}" | tee -a /var/log/trojan_cleanup.log
-        cp "$backup_file" /etc/xray/config.json
-    fi
 
     # Restart xray dengan verifikasi
     systemctl restart xray
