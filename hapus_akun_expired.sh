@@ -1,141 +1,98 @@
 #!/bin/bash
-# Script: hapus_akun_expired.sh
-# Penulis: RyyStore
-# Repo: https://github.com/RyyStore/autoscriptVIP
+# Skrip untuk menghapus akun yang sudah kadaluarsa
 
-# Warna
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
+# Mendefinisikan warna untuk tampilan
+COLOR1='\033[0;33m'
 NC='\033[0m'
+WH='\033[1;37m'
+COLBG1='\033[1;44m'
 
-# Konfigurasi
-XRAY_CONFIG="/etc/xray/config.json"
-LOG_FILE="/var/log/hapus_akun_expired.log"
-TODAY=$(date +%Y-%m-%d)
-TODAY_EPOCH=$(date -d "$TODAY" +%s)
+# Mendapatkan tanggal saat ini dalam format epoch
+current_date=$(date +%s)
 
-# Fungsi untuk logging
-log() {
-  echo -e "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
-  echo -e "$1"
-}
+echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
+echo -e "$COLOR1│${NC} ${COLBG1}        ${WH}• Deleting Expired Accounts •      ${NC} $COLOR1│ $NC"
+echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
 
-# Fungsi untuk membersihkan akun
-bersihkan_akun() {
-  local user=$1
-  local exp_date=$2
-  local protokol=$3
+echo -e "Current date (epoch): $current_date"
 
-  log "${YELLOW}[*] Menghapus akun ${BLUE}${protokol}${YELLOW}: ${GREEN}${user}${NC} (Expired: ${RED}${exp_date}${NC})"
+# Mengambil akun-akun dari file config.json untuk VMess, Trojan, dan Vless
+mapfile -t vmess_accounts < <(grep -E "^#vmg " "/etc/xray/config.json")
+mapfile -t trojan_accounts < <(grep -E "^#tg " "/etc/xray/config.json")
+mapfile -t vless_accounts < <(grep -E "^#vl " "/etc/xray/config.json")
 
-  # Hapus dari config.json
-  sed -i "/\"#${protokol} ${user} ${exp_date}\"/,/^},{/d" "$XRAY_CONFIG"
-
-  # Hapus semua file terkait
-  case $protokol in
-    "vm")
-      rm -f "/etc/vmess/${user}"* \
-            "/var/www/html/vmess-${user}"* \
-            "/home/vps/public_html/vmess-${user}"* 2>/dev/null
-      ;;
-    "tr")
-      rm -f "/etc/trojan/${user}"* \
-            "/var/www/html/trojan-${user}"* \
-            "/home/vps/public_html/trojan-${user}"* 2>/dev/null
-      ;;
-    "vlg")
-      rm -f "/etc/vless/${user}"* \
-            "/var/www/html/vless-${user}"* \
-            "/home/vps/public_html/vless-${user}"* 2>/dev/null
-      ;;
-  esac
-
-  # Hapus limit IP
-  rm -f "/etc/kyt/limit/${protokol}/ip/${user}"* 2>/dev/null
-}
-
-# Fungsi untuk memproses akun
-proses_akun() {
-  local protokol=$1
-  local tag=$2
-  local terhapus=0
-
-  log "\n${YELLOW}[*] Memindai akun ${BLUE}${protokol}${YELLOW}...${NC}"
-
-  # Cari akun dengan format yang lebih akurat
-  while read -r line; do
-    if [[ "$line" =~ "#${tag} ([^ ]+) ([0-9]{4}-[0-9]{2}-[0-9]{2})" ]]; then
-      user="${BASH_REMATCH[1]}"
-      exp_date="${BASH_REMATCH[2]}"
-      
-      # Debug: Tampilkan informasi akun
-      log "${BLUE}[D] Found account: ${user} Exp: ${exp_date}${NC}"
-
-      exp_epoch=$(date -d "$exp_date" +%s 2>/dev/null || true)
-      if [[ -z "$exp_epoch" ]]; then
-        log "${RED}[!] Format tanggal invalid untuk ${GREEN}${user}${RED}: ${exp_date}${NC}"
-        continue
-      fi
-
-      if [[ $exp_epoch -lt $TODAY_EPOCH ]]; then
-        bersihkan_akun "$user" "$exp_date" "$tag"
-        ((terhapus++))
-      else
-        log "${BLUE}[i] Akun ${GREEN}${user}${BLUE} aktif hingga ${RED}${exp_date}${NC}"
-      fi
-    fi
-  done < "$XRAY_CONFIG"
-
-  log "${GREEN}[✓] Total akun ${protokol} dihapus: ${RED}${terhapus}${NC}"
-}
-
-# Fungsi untuk setup cronjob otomatis
-setup_cronjob() {
-  echo -e "${YELLOW}[*] Setup cronjob harian...${NC}"
-  (crontab -l 2>/dev/null | grep -v "hapus_akun_expired.sh"; echo "0 0 * * * /usr/local/bin/hapus_akun_expired.sh >> $LOG_FILE 2>&1") | crontab -
-  echo -e "${GREEN}[✓] Cronjob berhasil dipasang!${NC}"
-  echo -e "${GREEN}[✓] Skrip akan berjalan otomatis setiap jam 00:00${NC}"
-}
-
-# Main execution
-echo -e "${YELLOW}╭─────────────────────────────────────────────╮${NC}"
-echo -e "${YELLOW}│${NC} ${BLUE}• PENGHAPUS AKUN EXPIRED XRAY •${NC}               ${YELLOW}│${NC}"
-echo -e "${YELLOW}╰─────────────────────────────────────────────╯${NC}"
-
-# Debug: Tampilkan tanggal hari ini
-log "${YELLOW}[D] Tanggal hari ini: ${TODAY} (${TODAY_EPOCH})${NC}"
-
-# Verifikasi config.json
-if [[ ! -f "$XRAY_CONFIG" ]]; then
-  echo -e "${RED}[!] File config Xray tidak ditemukan di ${XRAY_CONFIG}${NC}"
-  exit 1
+# Mengecek apakah ada akun
+if [[ ${#vmess_accounts[@]} -eq 0 && ${#trojan_accounts[@]} -eq 0 && ${#vless_accounts[@]} -eq 0 ]]; then
+    echo -e "$COLOR1│${NC} No accounts found! ${NC}"
+    exit 1
 fi
 
-# Debug: Tampilkan contoh isi config
-log "${YELLOW}[D] Contoh isi config.json:${NC}"
-grep -E '#vm|#tr|#vlg' "$XRAY_CONFIG" | head -n 3 >> "$LOG_FILE"
+deleted=0
 
-# Proses semua protokol
-proses_akun "vmess" "vm"
-proses_akun "trojan" "tr"
-proses_akun "vless" "vlg"
+# Fungsi untuk menghapus akun berdasarkan tipe
+delete_account() {
+    local account_type="$1"
+    local accounts=("${!2}")
+    for account in "${accounts[@]}"; do
+        user=$(echo "$account" | awk '{print $2}')
+        exp_date=$(echo "$account" | awk '{print $3}')
+        uuid=$(echo "$account" | awk '{print $4}')
 
-# Restart Xray
-echo -e "\n${YELLOW}[*] Merestart layanan Xray...${NC}"
+        # Konversi tanggal kadaluarsa ke epoch
+        exp_seconds=$(date -d "$exp_date" +%s 2>/dev/null)
+
+        if [[ $? -ne 0 ]]; then
+            echo -e "$COLOR1│${NC} Invalid date format for user: $user, date: $exp_date ${NC}"
+            continue
+        fi
+
+        echo -e "$COLOR1│${NC} Checking user: $user, Exp: $exp_date, UUID: $uuid ${NC}"
+
+        # Jika akun sudah expired
+        if [[ $exp_seconds -lt $current_date ]]; then
+            echo -e "$COLOR1│${NC} Deleting account: $user (Expired: $exp_date) ${NC}"
+
+            # Menghapus akun dari config.json berdasarkan tipe
+            if [[ "$account_type" == "vmess" ]]; then
+                sed -i "/^#vmg $user $exp_date $uuid/,/^},{/d" /etc/xray/config.json
+                sed -i "/^#vm $user $exp_date/,/^},{/d" /etc/xray/config.json
+            elif [[ "$account_type" == "trojan" ]]; then
+                sed -i "/^#tg $user $exp_date $uuid/,/^},{/d" /etc/xray/config.json
+                sed -i "/^#tg $user $exp_date/,/^},{/d" /etc/xray/config.json
+            elif [[ "$account_type" == "vless" ]]; then
+                sed -i "/^#vl $user $exp_date $uuid/,/^},{/d" /etc/xray/config.json
+                sed -i "/^#vl $user $exp_date/,/^},{/d" /etc/xray/config.json
+            fi
+
+            # Hapus file terkait dengan akun
+            rm -f /etc/vmess/${user}IP /etc/vmess/${user} /home/vps/public_html/vmess-$user.txt 2>/dev/null
+            rm -f /etc/trojan/${user}IP /etc/trojan/${user} /home/vps/public_html/trojan-$user.txt 2>/dev/null
+            rm -f /etc/vless/${user}IP /etc/vless/${user} /home/vps/public_html/vless-$user.txt 2>/dev/null
+
+            ((deleted++))
+        else
+            echo -e "$COLOR1│${NC} User: $user is still active until $exp_date ${NC}"
+        fi
+    done
+}
+
+# Menghapus akun VMess, Trojan, dan Vless
+delete_account "vmess" vmess_accounts[@]
+delete_account "trojan" trojan_accounts[@]
+delete_account "vless" vless_accounts[@]
+
+# Restart Xray service setelah penghapusan
 systemctl restart xray
-if systemctl is-active --quiet xray; then
-  echo -e "${GREEN}[✓] Xray berhasil direstart${NC}"
+
+if [[ $? -ne 0 ]]; then
+    echo -e "$COLOR1│${NC} Failed to restart xray service! ${NC}"
+fi
+
+# Menampilkan jumlah akun yang dihapus
+if [[ $deleted -eq 0 ]]; then
+    echo -e "$COLOR1│${NC} No expired accounts found. ${NC}"
 else
-  echo -e "${RED}[!] Gagal merestart Xray${NC}"
+    echo -e "$COLOR1│${NC} Successfully deleted $deleted expired account(s). ${NC}"
 fi
 
-# Setup cronjob jika belum ada
-if ! crontab -l | grep -q "hapus_akun_expired.sh"; then
-  setup_cronjob
-fi
-
-echo -e "${YELLOW}╭─────────────────────────────────────────────╮${NC}"
-echo -e "${YELLOW}│${NC} ${GREEN}• PROSES SELESAI •${NC}                          ${YELLOW}│${NC}"
-echo -e "${YELLOW}╰─────────────────────────────────────────────╯${NC}"
+echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
