@@ -22,13 +22,6 @@ log() {
   echo -e "$1"
 }
 
-# Fungsi untuk menampilkan waktu VPS
-tampilkan_waktu_vps() {
-  local vps_waktu=$(date "+%Y-%m-%d %H:%M:%S")
-  log "Waktu VPS saat ini: ${vps_waktu}"
-  echo -e "Waktu VPS saat ini: ${vps_waktu}"
-}
-
 # Fungsi untuk membersihkan akun
 bersihkan_akun() {
   local user=$1
@@ -73,7 +66,7 @@ proses_akun() {
 
   # Cari akun dengan format yang lebih akurat
   while read -r line; do
-    if [[ "$line" =~ \"#${tag}\ ([^\ ]+)\ ([0-9]{4}-[0-9]{2}-[0-9]{2}) ]]; then
+    if [[ "$line" =~ "#${tag} ([^ ]+) ([0-9]{4}-[0-9]{2}-[0-9]{2})" ]]; then
       user="${BASH_REMATCH[1]}"
       exp_date="${BASH_REMATCH[2]}"
       
@@ -93,7 +86,7 @@ proses_akun() {
         log "${BLUE}[i] Akun ${GREEN}${user}${BLUE} aktif hingga ${RED}${exp_date}${NC}"
       fi
     fi
-  done < <(grep -E "\"#${tag} [^ ]+ [0-9]{4}-[0-9]{2}-[0-9]{2}\"" "$XRAY_CONFIG")
+  done < "$XRAY_CONFIG"
 
   log "${GREEN}[✓] Total akun ${protokol} dihapus: ${RED}${terhapus}${NC}"
 }
@@ -111,9 +104,6 @@ echo -e "${YELLOW}╭───────────────────�
 echo -e "${YELLOW}│${NC} ${BLUE}• PENGHAPUS AKUN EXPIRED XRAY •${NC}               ${YELLOW}│${NC}"
 echo -e "${YELLOW}╰─────────────────────────────────────────────╯${NC}"
 
-# Tampilkan waktu VPS saat ini
-tampilkan_waktu_vps
-
 # Debug: Tampilkan tanggal hari ini
 log "${YELLOW}[D] Tanggal hari ini: ${TODAY} (${TODAY_EPOCH})${NC}"
 
@@ -125,7 +115,7 @@ fi
 
 # Debug: Tampilkan contoh isi config
 log "${YELLOW}[D] Contoh isi config.json:${NC}"
-grep -E '"#vm |"#tr |"#vlg ' "$XRAY_CONFIG" | head -n 3 >> "$LOG_FILE"
+grep -E '#vm|#tr|#vlg' "$XRAY_CONFIG" | head -n 3 >> "$LOG_FILE"
 
 # Proses semua protokol
 proses_akun "vmess" "vm"
