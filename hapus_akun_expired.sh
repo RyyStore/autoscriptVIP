@@ -1,98 +1,59 @@
 #!/bin/bash
-# Skrip untuk menghapus akun yang sudah kadaluarsa
 
-# Mendefinisikan warna untuk tampilan
-COLOR1='\033[0;33m'
-NC='\033[0m'
-WH='\033[1;37m'
-COLBG1='\033[1;44m'
+CONFIG_FILE="/etc/xray/config.json"
+LOG_FILE="/var/log/hapus_akun_expired.log"
+CURRENT_EPOCH=$(date +%s)
+CURRENT_DATE=$(date '+%Y-%m-%d %H:%M:%S')
+deleted_vmess=0
+deleted_trojan=0
+deleted_vless=0
 
-# Mendapatkan tanggal saat ini dalam format epoch
-current_date=$(date +%s)
+echo "╭─────────────────────────────────────────────╮" | tee "$LOG_FILE"
+echo "│       • PENGHAPUS AKUN EXPIRED XRAY •       │" | tee -a "$LOG_FILE"
+echo "╰─────────────────────────────────────────────╯" | tee -a "$LOG_FILE"
+echo "Waktu VPS saat ini: $CURRENT_DATE" | tee -a "$LOG_FILE"
+echo "" | tee -a "$LOG_FILE"
 
-echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}        ${WH}• Deleting Expired Accounts •      ${NC} $COLOR1│ $NC"
-echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
+delete_expired() {
+    local tag="$1"
+    local protocol="$2"
+    local deleted_var="deleted_${protocol}"
 
-echo -e "Current date (epoch): $current_date"
+    echo "[*] Memindai akun $protocol..." | tee -a "$LOG_FILE"
+    while IFS= read -r line; do
+        user=$(echo "$line" | cut -d ' ' -f2)
+        exp=$(echo "$line" | cut -d ' ' -f3)
 
-# Mengambil akun-akun dari file config.json untuk VMess, Trojan, dan Vless
-mapfile -t vmess_accounts < <(grep -E "^#vmg " "/etc/xray/config.json")
-mapfile -t trojan_accounts < <(grep -E "^#tg " "/etc/xray/config.json")
-mapfile -t vless_accounts < <(grep -E "^#vl " "/etc/xray/config.json")
-
-# Mengecek apakah ada akun
-if [[ ${#vmess_accounts[@]} -eq 0 && ${#trojan_accounts[@]} -eq 0 && ${#vless_accounts[@]} -eq 0 ]]; then
-    echo -e "$COLOR1│${NC} No accounts found! ${NC}"
-    exit 1
-fi
-
-deleted=0
-
-# Fungsi untuk menghapus akun berdasarkan tipe
-delete_account() {
-    local account_type="$1"
-    local accounts=("${!2}")
-    for account in "${accounts[@]}"; do
-        user=$(echo "$account" | awk '{print $2}')
-        exp_date=$(echo "$account" | awk '{print $3}')
-        uuid=$(echo "$account" | awk '{print $4}')
-
-        # Konversi tanggal kadaluarsa ke epoch
-        exp_seconds=$(date -d "$exp_date" +%s 2>/dev/null)
-
-        if [[ $? -ne 0 ]]; then
-            echo -e "$COLOR1│${NC} Invalid date format for user: $user, date: $exp_date ${NC}"
+        exp_epoch=$(date -d "$exp" +%s 2>/dev/null)
+        if [[ -z "$exp_epoch" ]]; then
+            echo "[!] Format tanggal invalid untuk $user ($exp)" | tee -a "$LOG_FILE"
             continue
         fi
 
-        echo -e "$COLOR1│${NC} Checking user: $user, Exp: $exp_date, UUID: $uuid ${NC}"
-
-        # Jika akun sudah expired
-        if [[ $exp_seconds -lt $current_date ]]; then
-            echo -e "$COLOR1│${NC} Deleting account: $user (Expired: $exp_date) ${NC}"
-
-            # Menghapus akun dari config.json berdasarkan tipe
-            if [[ "$account_type" == "vmess" ]]; then
-                sed -i "/^#vmg $user $exp_date $uuid/,/^},{/d" /etc/xray/config.json
-                sed -i "/^#vm $user $exp_date/,/^},{/d" /etc/xray/config.json
-            elif [[ "$account_type" == "trojan" ]]; then
-                sed -i "/^#tg $user $exp_date $uuid/,/^},{/d" /etc/xray/config.json
-                sed -i "/^#tg $user $exp_date/,/^},{/d" /etc/xray/config.json
-            elif [[ "$account_type" == "vless" ]]; then
-                sed -i "/^#vl $user $exp_date $uuid/,/^},{/d" /etc/xray/config.json
-                sed -i "/^#vl $user $exp_date/,/^},{/d" /etc/xray/config.json
-            fi
-
-            # Hapus file terkait dengan akun
-            rm -f /etc/vmess/${user}IP /etc/vmess/${user} /home/vps/public_html/vmess-$user.txt 2>/dev/null
-            rm -f /etc/trojan/${user}IP /etc/trojan/${user} /home/vps/public_html/trojan-$user.txt 2>/dev/null
-            rm -f /etc/vless/${user}IP /etc/vless/${user} /home/vps/public_html/vless-$user.txt 2>/dev/null
-
-            ((deleted++))
-        else
-            echo -e "$COLOR1│${NC} User: $user is still active until $exp_date ${NC}"
+        if [[ $exp_epoch -lt $CURRENT_EPOCH ]]; then
+            echo "[-] Menghapus $protocol: $user (Expired: $exp)" | tee -a "$LOG_FILE"
+            # Hapus dari config
+            sed -i "/^#${tag} $user $exp/,/^},{/d" "$CONFIG_FILE"
+            # Hapus file akun (jika ada)
+            rm -f /etc/$protocol/${user} /etc/$protocol/${user}IP /home/vps/public_html/${protocol}-${user}.txt
+            # Tambah hitung
+            (( ${deleted_var}++ ))
         fi
-    done
+    done < <(grep -E "^#${tag} " "$CONFIG_FILE")
 }
 
-# Menghapus akun VMess, Trojan, dan Vless
-delete_account "vmess" vmess_accounts[@]
-delete_account "trojan" trojan_accounts[@]
-delete_account "vless" vless_accounts[@]
+delete_expired "vm" "vmess"
+delete_expired "tr" "trojan"
+delete_expired "vl" "vless"
 
-# Restart Xray service setelah penghapusan
-systemctl restart xray
+echo "" | tee -a "$LOG_FILE"
+echo "[✓] Total akun vmess dihapus: $deleted_vmess" | tee -a "$LOG_FILE"
+echo "[✓] Total akun trojan dihapus: $deleted_trojan" | tee -a "$LOG_FILE"
+echo "[✓] Total akun vless dihapus: $deleted_vless" | tee -a "$LOG_FILE"
 
-if [[ $? -ne 0 ]]; then
-    echo -e "$COLOR1│${NC} Failed to restart xray service! ${NC}"
-fi
+echo "[*] Merestart layanan Xray..." | tee -a "$LOG_FILE"
+systemctl restart xray && echo "[✓] Xray berhasil direstart" | tee -a "$LOG_FILE"
 
-# Menampilkan jumlah akun yang dihapus
-if [[ $deleted -eq 0 ]]; then
-    echo -e "$COLOR1│${NC} No expired accounts found. ${NC}"
-else
-    echo -e "$COLOR1│${NC} Successfully deleted $deleted expired account(s). ${NC}"
-fi
-
-echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
+echo "╭─────────────────────────────────────────────╮" | tee -a "$LOG_FILE"
+echo "│              • PROSES SELESAI •             │" | tee -a "$LOG_FILE"
+echo "╰─────────────────────────────────────────────╯" | tee -a "$LOG_FILE"
