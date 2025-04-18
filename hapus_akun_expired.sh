@@ -2,58 +2,51 @@
 
 CONFIG_FILE="/etc/xray/config.json"
 LOG_FILE="/var/log/hapus_akun_expired.log"
-CURRENT_EPOCH=$(date +%s)
-CURRENT_DATE=$(date '+%Y-%m-%d %H:%M:%S')
-deleted_vmess=0
-deleted_trojan=0
-deleted_vless=0
+WAKTU_SAAT_INI=$(TZ=Asia/Jakarta date "+%Y-%m-%d %H:%M:%S")
+EPOCH_SAAT_INI=$(TZ=Asia/Jakarta date +%s)
 
-echo "╭─────────────────────────────────────────────╮" | tee "$LOG_FILE"
-echo "│       • PENGHAPUS AKUN EXPIRED XRAY •       │" | tee -a "$LOG_FILE"
-echo "╰─────────────────────────────────────────────╯" | tee -a "$LOG_FILE"
-echo "Waktu VPS saat ini: $CURRENT_DATE" | tee -a "$LOG_FILE"
-echo "" | tee -a "$LOG_FILE"
+function hapus_akun_expired() {
+    echo "╭─────────────────────────────────────────────╮" | tee "$LOG_FILE"
+    echo "│ • PENGHAPUS AKUN EXPIRED XRAY •            │" | tee -a "$LOG_FILE"
+    echo "╰─────────────────────────────────────────────╯" | tee -a "$LOG_FILE"
+    echo "Waktu VPS saat ini: $WAKTU_SAAT_INI" | tee -a "$LOG_FILE"
+    echo "[D] Epoch sekarang : $EPOCH_SAAT_INI" | tee -a "$LOG_FILE"
 
-delete_expired() {
-    local tag="$1"
-    local protocol="$2"
-    local deleted_var="deleted_${protocol}"
+    declare -A TANDA=(
+        [vmess]="#vm"
+        [trojan]="#tr"
+        [vless]="#vl"
+    )
 
-    echo "[*] Memindai akun $protocol..." | tee -a "$LOG_FILE"
-    while IFS= read -r line; do
-        user=$(echo "$line" | cut -d ' ' -f2)
-        exp=$(echo "$line" | cut -d ' ' -f3)
+    for jenis in vmess trojan vless; do
+        echo -e "\n[*] Memindai akun $jenis..." | tee -a "$LOG_FILE"
+        count=0
+        grep -a "${TANDA[$jenis]}" "$CONFIG_FILE" | while read -r line; do
+            nama=$(echo "$line" | awk '{print $2}')
+            tanggal_exp=$(echo "$line" | awk '{print $3}')
+            expired_epoch=$(date -d "$tanggal_exp" +%s 2>/dev/null)
 
-        exp_epoch=$(date -d "$exp" +%s 2>/dev/null)
-        if [[ -z "$exp_epoch" ]]; then
-            echo "[!] Format tanggal invalid untuk $user ($exp)" | tee -a "$LOG_FILE"
-            continue
-        fi
+            if [[ -z $expired_epoch ]]; then
+                echo "[!] Format tanggal salah pada akun $nama, dilewati." | tee -a "$LOG_FILE"
+                continue
+            fi
 
-        if [[ $exp_epoch -lt $CURRENT_EPOCH ]]; then
-            echo "[-] Menghapus $protocol: $user (Expired: $exp)" | tee -a "$LOG_FILE"
-            # Hapus dari config
-            sed -i "/^#${tag} $user $exp/,/^},{/d" "$CONFIG_FILE"
-            # Hapus file akun (jika ada)
-            rm -f /etc/$protocol/${user} /etc/$protocol/${user}IP /home/vps/public_html/${protocol}-${user}.txt
-            # Tambah hitung
-            (( ${deleted_var}++ ))
-        fi
-    done < <(grep -E "^#${tag} " "$CONFIG_FILE")
+            if [[ $expired_epoch -lt $EPOCH_SAAT_INI ]]; then
+                # hapus blok dari $CONFIG_FILE
+                sed -i "/^${TANDA[$jenis]} $nama $tanggal_exp/,/^},{/d" "$CONFIG_FILE"
+                rm -f /etc/xray/$nama*
+                echo "[✓] $nama ($jenis) expired $tanggal_exp - dihapus." | tee -a "$LOG_FILE"
+                ((count++))
+            fi
+        done
+        echo "[✓] Total akun $jenis dihapus: $count" | tee -a "$LOG_FILE"
+    done
+
+    echo -e "\n[*] Merestart layanan Xray..." | tee -a "$LOG_FILE"
+    systemctl restart xray && echo "[✓] Xray berhasil direstart" | tee -a "$LOG_FILE"
+    echo "╭─────────────────────────────────────────────╮" | tee -a "$LOG_FILE"
+    echo "│ • PROSES SELESAI •                         │" | tee -a "$LOG_FILE"
+    echo "╰─────────────────────────────────────────────╯" | tee -a "$LOG_FILE"
 }
 
-delete_expired "vm" "vmess"
-delete_expired "tr" "trojan"
-delete_expired "vl" "vless"
-
-echo "" | tee -a "$LOG_FILE"
-echo "[✓] Total akun vmess dihapus: $deleted_vmess" | tee -a "$LOG_FILE"
-echo "[✓] Total akun trojan dihapus: $deleted_trojan" | tee -a "$LOG_FILE"
-echo "[✓] Total akun vless dihapus: $deleted_vless" | tee -a "$LOG_FILE"
-
-echo "[*] Merestart layanan Xray..." | tee -a "$LOG_FILE"
-systemctl restart xray && echo "[✓] Xray berhasil direstart" | tee -a "$LOG_FILE"
-
-echo "╭─────────────────────────────────────────────╮" | tee -a "$LOG_FILE"
-echo "│              • PROSES SELESAI •             │" | tee -a "$LOG_FILE"
-echo "╰─────────────────────────────────────────────╯" | tee -a "$LOG_FILE"
+hapus_akun_expired
