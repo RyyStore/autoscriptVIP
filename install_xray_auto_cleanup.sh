@@ -19,40 +19,46 @@ export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 cleanup_expired() {
     local type=$1
-    local tag=$2
-    local log_prefix=$3
+    local log_prefix=$2
+    shift 2
+    local tags=("$@")
     
     current_date=$(date +%s)
     log "$log_prefix Starting cleanup..."
     
-    accounts=($(grep -E "^${tag} " "$XRAY_CONFIG" | awk '{print $2,$3,$4}'))
     deleted=0
 
-    for ((i=0; i<${#accounts[@]}; i+=3)); do
-        user=${accounts[i]}
-        exp_date=${accounts[i+1]}
-        uuid=${accounts[i+2]}
+    for tag in "${tags[@]}"; do
+        accounts=($(grep -E "^${tag} " "$XRAY_CONFIG" | awk '{print $2,$3,$4}'))
         
-        exp_seconds=$(date -d "$exp_date" +%s 2>/dev/null) || continue
-        
-        if [[ $exp_seconds -lt $current_date ]]; then
-            log "$log_prefix Deleting $type account: $user (Expired: $exp_date)"
-            echo "### $user $exp_date $uuid" >> "/etc/$type/akundelete"
-            sed -i "/^${tag} $user $exp_date/,/^},{/d" "$XRAY_CONFIG"
-            rm -f "/etc/$type/${user}" "/etc/$type/${user}IP" "/home/vps/public_html/$type-$user.txt" 2>/dev/null
-            ((deleted++))
-        fi
+        for ((i=0; i<${#accounts[@]}; i+=3)); do
+            user=${accounts[i]}
+            exp_date=${accounts[i+1]}
+            uuid=${accounts[i+2]}
+
+            exp_seconds=$(date -d "$exp_date" +%s 2>/dev/null) || continue
+
+            if [[ $exp_seconds -lt $current_date ]]; then
+                log "$log_prefix Deleting $type account: $user (Expired: $exp_date)"
+                echo "### $user $exp_date $uuid" >> "/etc/$type/akundelete"
+                sed -i "/^${tag} $user $exp_date/,/^},{/d" "$XRAY_CONFIG"
+                rm -f "/etc/$type/${user}" "/etc/$type/${user}IP" "/home/vps/public_html/$type-$user.txt" 2>/dev/null
+                ((deleted++))
+            fi
+        done
     done
-    
+
     log "$log_prefix Deleted $deleted expired $type accounts"
 }
+
 
 {
     echo "======================================"
     log "Starting Xray Auto Cleanup"
-    cleanup_expired "vmess" "#vmg" "[VMESS]"
-    cleanup_expired "vless" "#vlg" "[VLESS]"
-    cleanup_expired "trojan" "#trg" "[TROJAN]"
+    cleanup_expired "vmess" "[VMESS]" "#vmg" "#vm"
+    cleanup_expired "vless" "[VLESS]" "#vlg" "#vl"
+    cleanup_expired "trojan" "[TROJAN]" "#trg" "#tr"
+
 
     if grep -q "Deleted [1-9]" $LOG_FILE; then
         systemctl restart xray
