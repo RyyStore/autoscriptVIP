@@ -1,10 +1,5 @@
 #!/bin/bash
 # Script: hapus_akun_expired.sh
-# Fungsi: Auto cleaner untuk akun VMESS, VLESS, Trojan yang sudah expired
-# Author: RyyStore
-# Repo: https://github.com/RyyStore/autoscriptVIP/main/hapus_akun_expired.sh
-#!/bin/bash
-# Script: hapus_akun_expired.sh
 # Penulis: RyyStore
 # Repo: https://github.com/RyyStore/autoscriptVIP
 
@@ -35,10 +30,10 @@ bersihkan_akun() {
 
   log "${YELLOW}[*] Menghapus akun ${BLUE}${protokol}${YELLOW}: ${GREEN}${user}${NC} (Expired: ${RED}${exp_date}${NC})"
 
-  # Hapus dari config.json
-  sed -i "/#${protokol} ${user} ${exp_date}/,/},{/d" "$XRAY_CONFIG"
-
-  # Hapus file terkait
+  # Hapus dari config.json (versi lebih robust)
+  sed -i "/\"#${protokol} ${user} ${exp_date}\"/,/^},{/d" "$XRAY_CONFIG"
+  
+  # Hapus semua file terkait
   case $protokol in
     "vm")
       rm -f "/etc/vmess/${user}"* \
@@ -69,10 +64,10 @@ proses_akun() {
 
   log "\n${YELLOW}[*] Memindai akun ${BLUE}${protokol}${YELLOW}...${NC}"
 
-  # Cari akun dengan format spesifik
-  grep -A1 "#${tag} " "$XRAY_CONFIG" | grep -E "#${tag} [^ ]+ [0-9]{4}-[0-9]{2}-[0-9]{2}" | while read -r line; do
-    user=$(echo "$line" | awk '{print $2}')
-    exp_date=$(echo "$line" | awk '{print $3}')
+  # Cari akun dengan format yang lebih akurat
+  grep -E "\"#${tag} [^ ]+ [0-9]{4}-[0-9]{2}-[0-9]{2}\"" "$XRAY_CONFIG" | while read -r line; do
+    user=$(echo "$line" | grep -oP "\"#${tag} \K[^ ]+")
+    exp_date=$(echo "$line" | grep -oP "[0-9]{4}-[0-9]{2}-[0-9]{2}")
 
     if [[ -z "$exp_date" ]]; then
       log "${YELLOW}[!] Tidak menemukan tanggal expired untuk ${GREEN}${user}${NC}"
@@ -94,6 +89,14 @@ proses_akun() {
   done
 
   log "${GREEN}[✓] Total akun ${protokol} dihapus: ${RED}${terhapus}${NC}"
+}
+
+# Fungsi untuk setup cronjob otomatis
+setup_cronjob() {
+  echo -e "${YELLOW}[*] Setup cronjob harian...${NC}"
+  (crontab -l 2>/dev/null | grep -v "hapus_akun_expired.sh"; echo "0 0 * * * /usr/local/bin/hapus_akun_expired.sh >> $LOG_FILE 2>&1") | crontab -
+  echo -e "${GREEN}[✓] Cronjob berhasil dipasang!${NC}"
+  echo -e "${GREEN}[✓] Skrip akan berjalan otomatis setiap jam 00:00${NC}"
 }
 
 # Main execution
@@ -121,15 +124,11 @@ else
   echo -e "${RED}[!] Gagal merestart Xray${NC}"
 fi
 
+# Setup cronjob jika belum ada
+if ! crontab -l | grep -q "hapus_akun_expired.sh"; then
+  setup_cronjob
+fi
+
 echo -e "${YELLOW}╭─────────────────────────────────────────────╮${NC}"
 echo -e "${YELLOW}│${NC} ${GREEN}• PROSES SELESAI •${NC}                          ${YELLOW}│${NC}"
 echo -e "${YELLOW}╰─────────────────────────────────────────────╯${NC}"
-
-# Install mode
-if [[ "$1" == "--install" ]]; then
-  install_script
-  exit 0
-fi
-
-# Jalankan main
-main
