@@ -22,6 +22,13 @@ log() {
   echo -e "$1"
 }
 
+# Fungsi untuk menampilkan waktu VPS
+tampilkan_waktu_vps() {
+  local vps_waktu=$(date "+%Y-%m-%d %H:%M:%S")
+  log "Waktu VPS saat ini: ${vps_waktu}"
+  echo -e "Waktu VPS saat ini: ${vps_waktu}"
+}
+
 # Fungsi untuk membersihkan akun
 bersihkan_akun() {
   local user=$1
@@ -103,6 +110,9 @@ setup_cronjob() {
 echo -e "${YELLOW}╭─────────────────────────────────────────────╮${NC}"
 echo -e "${YELLOW}│${NC} ${BLUE}• PENGHAPUS AKUN EXPIRED XRAY •${NC}               ${YELLOW}│${NC}"
 echo -e "${YELLOW}╰─────────────────────────────────────────────╯${NC}"
+
+# Tampilkan waktu VPS saat ini
+tampilkan_waktu_vps
 
 # Debug: Tampilkan tanggal hari ini
 log "${YELLOW}[D] Tanggal hari ini: ${TODAY} (${TODAY_EPOCH})${NC}"
