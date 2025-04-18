@@ -3,6 +3,11 @@
 # Fungsi: Auto cleaner untuk akun VMESS, VLESS, Trojan yang sudah expired
 # Author: RyyStore
 # Repo: https://github.com/RyyStore/autoscriptVIP/main/hapus_akun_expired.sh
+#!/bin/bash
+# Script: hapus_akun_expired.sh
+# Penulis: RyyStore
+# Repo: https://github.com/RyyStore/autoscriptVIP
+
 # Warna
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -13,7 +18,8 @@ NC='\033[0m'
 # Konfigurasi
 XRAY_CONFIG="/etc/xray/config.json"
 LOG_FILE="/var/log/hapus_akun_expired.log"
-TODAY_EPOCH=$(date +%s)
+TODAY=$(date +%Y-%m-%d)
+TODAY_EPOCH=$(date -d "$TODAY" +%s)
 
 # Fungsi untuk logging
 log() {
@@ -30,8 +36,8 @@ bersihkan_akun() {
   log "${YELLOW}[*] Menghapus akun ${BLUE}${protokol}${YELLOW}: ${GREEN}${user}${NC} (Expired: ${RED}${exp_date}${NC})"
 
   # Hapus dari config.json
-  sed -i "/#${protokol} ${user} ${exp_date}/,/^},{/d" "$XRAY_CONFIG"
-  
+  sed -i "/#${protokol} ${user} ${exp_date}/,/},{/d" "$XRAY_CONFIG"
+
   # Hapus file terkait
   case $protokol in
     "vm")
@@ -39,15 +45,15 @@ bersihkan_akun() {
             "/var/www/html/vmess-${user}"* \
             "/home/vps/public_html/vmess-${user}"* 2>/dev/null
       ;;
-    "vl")
-      rm -f "/etc/vless/${user}"* \
-            "/var/www/html/vless-${user}"* \
-            "/home/vps/public_html/vless-${user}"* 2>/dev/null
-      ;;
     "tr")
       rm -f "/etc/trojan/${user}"* \
             "/var/www/html/trojan-${user}"* \
             "/home/vps/public_html/trojan-${user}"* 2>/dev/null
+      ;;
+    "vlg")
+      rm -f "/etc/vless/${user}"* \
+            "/var/www/html/vless-${user}"* \
+            "/home/vps/public_html/vless-${user}"* 2>/dev/null
       ;;
   esac
 
@@ -64,7 +70,7 @@ proses_akun() {
   log "\n${YELLOW}[*] Memindai akun ${BLUE}${protokol}${YELLOW}...${NC}"
 
   # Cari akun dengan format spesifik
-  grep -P "#${tag} \w+ \d{4}-\d{2}-\d{2}" "$XRAY_CONFIG" | while read -r line; do
+  grep -A1 "#${tag} " "$XRAY_CONFIG" | grep -E "#${tag} [^ ]+ [0-9]{4}-[0-9]{2}-[0-9]{2}" | while read -r line; do
     user=$(echo "$line" | awk '{print $2}')
     exp_date=$(echo "$line" | awk '{print $3}')
 
@@ -90,7 +96,7 @@ proses_akun() {
   log "${GREEN}[✓] Total akun ${protokol} dihapus: ${RED}${terhapus}${NC}"
 }
 
-# Main
+# Main execution
 echo -e "${YELLOW}╭─────────────────────────────────────────────╮${NC}"
 echo -e "${YELLOW}│${NC} ${BLUE}• PENGHAPUS AKUN EXPIRED XRAY •${NC}               ${YELLOW}│${NC}"
 echo -e "${YELLOW}╰─────────────────────────────────────────────╯${NC}"
@@ -102,9 +108,9 @@ if [[ ! -f "$XRAY_CONFIG" ]]; then
 fi
 
 # Proses semua protokol
-proses_akun "vm" "vm"
-proses_akun "tr" "tr"
-proses_akun "vlg" "vlg"
+proses_akun "vmess" "vm"
+proses_akun "trojan" "tr"
+proses_akun "vless" "vlg"
 
 # Restart Xray
 echo -e "\n${YELLOW}[*] Merestart layanan Xray...${NC}"
@@ -115,10 +121,9 @@ else
   echo -e "${RED}[!] Gagal merestart Xray${NC}"
 fi
 
-echo -e "${YELLOW}╭─────────────────────────���───────────────────╮${NC}"
+echo -e "${YELLOW}╭─────────────────────────────────────────────╮${NC}"
 echo -e "${YELLOW}│${NC} ${GREEN}• PROSES SELESAI •${NC}                          ${YELLOW}│${NC}"
 echo -e "${YELLOW}╰─────────────────────────────────────────────╯${NC}"
-}
 
 # Install mode
 if [[ "$1" == "--install" ]]; then
