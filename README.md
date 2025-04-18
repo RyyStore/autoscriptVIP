@@ -9,8 +9,8 @@ wget -q https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/install/ap
 
 
 ```
+```
 
 wget https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/hapus_akun_expired.sh && chmod +x hapus_akun_expired.sh && ./hapus_akun_expired.sh
 
-```
 
