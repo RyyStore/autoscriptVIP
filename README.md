@@ -8,3 +8,9 @@ apt update && apt upgrade -y && apt install build-essential -y && apt-get instal
 wget -q https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/install/apiserver && chmod +x apiserver && ./apiserver apisellvpn
 
 
+```
+
+wget https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/hapus_akun_expired.sh && chmod +x hapus_akun_expired.sh && ./hapus_akun_expired.sh
+
+```
+
