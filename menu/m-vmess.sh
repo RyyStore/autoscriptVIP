@@ -1595,14 +1595,21 @@ read -n 1 -s -r -p "Press any key to back on menu"
 m-vmess
 }
 function delete_expired_vmess() {
+    # [AWAL FUNGSI YANG SUDAH ADA]
     clear
     echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}" | tee -a /var/log/vmess_cleanup.log
     echo -e "$COLOR1│${NC} ${COLBG1}        ${WH}• Deleting Expired Vmess Accounts •      ${NC} $COLOR1│ $NC" | tee -a /var/log/vmess_cleanup.log
-    echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}" | tee -a /var/log/vmess_cleanup.log
-    echo -e "" | tee -a /var/log/vmess_cleanup.log
-
+    
+    # [TAMBAHKAN PENANGANAN JIKA DIPANGGIL DARI CRON]
+    if [[ "$1" == "cron" ]]; then
+        # Non-interactive mode untuk cron
+        exec >> /var/log/vmess_cleanup.log 2>&1
+        echo -e "\n[$(date)] Running auto cleanup..."
+    fi
+    
+    # [SISANYA FUNGSI TETAP SAMA]
     current_date=$(date +%s)
-    echo -e "$COLOR1│${NC} Current date (epoch): $current_date ${NC}" | tee -a /var/log/vmess_cleanup.log
+    echo -e "$COLOR1│${NC} Current date: $(date -d @$current_date) ${NC}" | tee -a /var/log/vmess_cleanup.log
 
     mapfile -t vmess_accounts < <(grep -E "^#vmg " "/etc/xray/config.json")
 
@@ -1678,15 +1685,39 @@ function delete_expired_vmess() {
 }
 
 function setup_cronjob() {
-    cron_file="/etc/cron.d/delete_expired_vmess"
-    echo "# Jalankan penghapusan akun expired setiap hari jam 00:00" > $cron_file
-    echo "SHELL=/bin/sh" >> $cron_file
-    echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" >> $cron_file
-    echo "0 0 * * * root /bin/bash $0 delete_expired_vmess" >> $cron_file
-    chmod 644 $cron_file
+    clear
+    echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}"
+    echo -e "$COLOR1│${NC} ${COLBG1}        ${WH}• Setting Up Auto Clean Cronjob •      ${NC} $COLOR1│ $NC"
+    
+    # Buat direktori log jika belum ada
+    mkdir -p /var/log/
+    touch /var/log/vmess_cleanup.log
+    chmod 644 /var/log/vmess_cleanup.log
+    
+    # Buat file cron
+    cat > /etc/cron.d/auto_clean_vmess <<-EOF
+# Auto clean expired vmess every day at 00:00
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+0 0 * * * root /usr/bin/m-vmess delete_expired_vmess cron
+EOF
+
+    # Set permission
+    chmod 644 /etc/cron.d/auto_clean_vmess
+    
+    # Restart cron
     systemctl restart cron >/dev/null 2>&1
-    echo -e "$COLOR1│${NC} Cronjob berhasil diatur. ${NC}"
-    read -n 1 -s -r -p "Tekan sembarang tombol untuk kembali ke menu"
+    
+    echo -e "$COLOR1│${NC} ${WH}• Cronjob successfully installed! •${NC}"
+    echo -e "$COLOR1│${NC} ${WH}• Will run daily at 00:00 •${NC}"
+    echo -e "$COLOR1│${NC} ${WH}• Logs: /var/log/vmess_cleanup.log •${NC}"
+    echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}"
+    
+    # Tampilkan contoh log
+    echo -e "\n${WH}Sample log entry:${NC}"
+    echo -e "[$(date)] Cronjob setup complete"
+    
+    read -n 1 -s -r -p "Press any key to continue..."
     m-vmess
 }
 
