@@ -30,9 +30,9 @@ bersihkan_akun() {
 
   log "${YELLOW}[*] Menghapus akun ${BLUE}${protokol}${YELLOW}: ${GREEN}${user}${NC} (Expired: ${RED}${exp_date}${NC})"
 
-  # Hapus dari config.json (versi lebih robust)
+  # Hapus dari config.json
   sed -i "/\"#${protokol} ${user} ${exp_date}\"/,/^},{/d" "$XRAY_CONFIG"
-  
+
   # Hapus semua file terkait
   case $protokol in
     "vm")
