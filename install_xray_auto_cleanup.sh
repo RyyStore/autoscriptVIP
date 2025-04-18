@@ -1,108 +1,91 @@
 #!/bin/bash
-# Installer untuk xray_auto_cleanup
-# By RyyStore
 
-echo "Menginstal Xray Auto Cleanup..."
+# Install cron if not installed
+echo "Checking if cron is installed..."
+if ! command -v cron &> /dev/null
+then
+    echo "Cron is not installed. Installing..."
+    apt update && apt install cron -y
+    systemctl enable cron
+    systemctl start cron
+fi
 
-# Buat file utama
-cat << 'EOF' > /usr/local/bin/xray_auto_cleanup
+# Creating the cleanup script file
+echo "Creating cleanup script..."
+
+cat << 'EOF' > /usr/local/bin/xray_cleanup.sh
 #!/bin/bash
-# Script untuk menghapus akun expired (vmess, vless, trojan)
-# By RyyStore
 
-LOG_FILE="/var/log/xray_auto_cleanup.log"
-XRAY_CONFIG="/etc/xray/config.json"
-
-# Fungsi log
-log() {
-    echo -e "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a $LOG_FILE
-}
-
-# Load env
-export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-
-# Daftar tag
-tags_vmess=("#vm" "#vmg")
-tags_vless=("#vl" "#vlg")
-tags_trojan=("#tr" "#trg")
-
-# Fungsi utama cleanup
-cleanup_expired() {
-    local type=$1
-    local tags=("${!2}")
-    local log_prefix=$3
-
-    current_date=$(date +%s)
-    log "$log_prefix Starting cleanup..."
-
-    deleted=0
-
-    for tag in "${tags[@]}"; do
-        accounts=($(grep -E "^${tag} " "$XRAY_CONFIG" | awk '{print $2,$3,$4}'))
-        
-        for ((i=0; i<${#accounts[@]}; i+=3)); do
-            user=${accounts[i]}
-            exp_date=${accounts[i+1]}
-            uuid=${accounts[i+2]}
-
-            exp_seconds=$(date -d "$exp_date" +%s 2>/dev/null) || continue
-
-            if [[ $exp_seconds -lt $current_date ]]; then
-                log "$log_prefix Deleting $type account: $user (Expired: $exp_date)"
-
-                echo "### $user $exp_date $uuid" >> "/etc/$type/akundelete"
-
-                sed -i "/^${tag} $user $exp_date/,/\"email\": \"$user\"/d" "$XRAY_CONFIG"
-
-                rm -f "/etc/$type/${user}" "/etc/$type/${user}IP" "/home/vps/public_html/$type-$user.txt" 2>/dev/null
-
-                ((deleted++))
-            fi
-        done
-    done
-
-    log "$log_prefix Deleted $deleted expired $type accounts"
-}
-
-# Eksekusi utama
-{
-    echo "======================================"
-    log "Starting Xray Auto Cleanup"
-
-    cleanup_expired "vmess" tags_vmess[@] "[VMESS]"
-    cleanup_expired "vless" tags_vless[@] "[VLESS]"
-    cleanup_expired "trojan" tags_trojan[@] "[TROJAN]"
-
-    # Restart xray jika ada penghapusan
-    if grep -q "Deleted [1-9]" $LOG_FILE; then
-        systemctl restart xray
-        log "Xray service restarted"
+# Function to delete VMess accounts
+function del-vmess(){
+  clear
+  NUMBER_OF_CLIENTS=$(grep -c -E "^#vm " "/etc/xray/config.json")
+  if [[ ${NUMBER_OF_CLIENTS} == '0' ]]; then
+    echo "No existing clients found for VMess"
+    return
+  fi
+  echo "Deleting VMess accounts..."
+  for user in $(grep -E "^#vm " "/etc/xray/config.json" | cut -d ' ' -f 2); do
+    exp=$(grep -E "^#vm $user " "/etc/xray/config.json" | cut -d ' ' -f 3)
+    if [[ "$(date +%Y-%m-%d)" > "$exp" ]]; then
+      sed -i "/^#vm $user /,/},{/d" /etc/xray/config.json
+      echo "Deleted VMess account: $user, Expired on $exp"
     fi
+  done
+}
 
-    log "Cleanup completed"
-    echo "======================================"
-} | tee -a $LOG_FILE
+# Function to delete Vless accounts
+function del-vless(){
+  clear
+  NUMBER_OF_CLIENTS=$(grep -c -E "^#vl " "/etc/xray/config.json")
+  if [[ ${NUMBER_OF_CLIENTS} == '0' ]]; then
+    echo "No existing clients found for Vless"
+    return
+  fi
+  echo "Deleting Vless accounts..."
+  for user in $(grep -E "^#vl " "/etc/xray/config.json" | cut -d ' ' -f 2); do
+    exp=$(grep -E "^#vl $user " "/etc/xray/config.json" | cut -d ' ' -f 3)
+    if [[ "$(date +%Y-%m-%d)" > "$exp" ]]; then
+      sed -i "/^#vl $user /,/},{/d" /etc/xray/config.json
+      echo "Deleted Vless account: $user, Expired on $exp"
+    fi
+  done
+}
+
+# Function to delete Trojan accounts
+function del-trojan(){
+  clear
+  NUMBER_OF_CLIENTS=$(grep -c -E "^#tr " "/etc/xray/config.json")
+  if [[ ${NUMBER_OF_CLIENTS} == '0' ]]; then
+    echo "No existing clients found for Trojan"
+    return
+  fi
+  echo "Deleting Trojan accounts..."
+  for user in $(grep -E "^#tr " "/etc/xray/config.json" | cut -d ' ' -f 2); do
+    exp=$(grep -E "^#tr $user " "/etc/xray/config.json" | cut -d ' ' -f 3)
+    if [[ "$(date +%Y-%m-%d)" > "$exp" ]]; then
+      sed -i "/^#tr $user /,/},{/d" /etc/xray/config.json
+      echo "Deleted Trojan account: $user, Expired on $exp"
+    fi
+  done
+}
+
+# Running all functions
+del-vmess
+del-vless
+del-trojan
+
+# Restart Xray service after deletion
+systemctl restart xray
 EOF
 
-# Buat file log
-touch /var/log/xray_auto_cleanup.log
-chmod 644 /var/log/xray_auto_cleanup.log
+# Make the script executable
+chmod +x /usr/local/bin/xray_cleanup.sh
 
-# Set permission
-chmod +x /usr/local/bin/xray_auto_cleanup
+# Create cron job to run this script every day at midnight
+echo "Setting up cron job to run xray_cleanup.sh every day at midnight..."
+(crontab -l 2>/dev/null; echo "0 0 * * * /usr/local/bin/xray_cleanup.sh > /dev/null 2>&1") | crontab -
 
-# Tambahkan ke cron
-cat <<EOF > /etc/cron.d/xray_auto_cleanup
-# Cleanup expired accounts daily at 00:00
-SHELL=/bin/bash
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-0 0 * * * root /usr/local/bin/xray_auto_cleanup
-EOF
-
-echo "Cronjob dibuat di /etc/cron.d/xray_auto_cleanup"
-
-# Test awal
-echo "Menjalankan test pertama..."
-/usr/local/bin/xray_auto_cleanup
-
-echo "Instalasi selesai. Log tersedia di /var/log/xray_auto_cleanup.log"
+# Status message
+echo "Cleanup script and cron job have been installed successfully."
+echo "The script will run automatically every day at midnight to delete expired accounts."
