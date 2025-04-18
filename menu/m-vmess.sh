@@ -38,6 +38,12 @@ echo -e "\033[0;32mTanggal Server: $date_list\033[0m"
 # URL daftar IP izin
 data_ip="https://raw.githubusercontent.com/RyyStore/permission/main/ip"
 
+# Jika dipanggil dengan parameter langsung
+   if [ "$1" == "delete_expired_vmess" ]; then
+       delete_expired_vmess
+       exit 0
+   fi
+
 # Fungsi untuk memeriksa izin script
 checking_sc() {
     useexp=$(curl -sS "$data_ip" | grep -w "$ipsaya" | awk '{print $3}')
