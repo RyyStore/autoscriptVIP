@@ -11,11 +11,6 @@ COLOR1="$(grep -w "TEXT" /etc/rmbl/theme/$colornow | cut -d: -f2 | sed 's/ //g')
 COLBG1="$(grep -w "BG" /etc/rmbl/theme/$colornow | cut -d: -f2 | sed 's/ //g')"
 WH='\033[1;37m'
 
-# Jika dipanggil dengan parameter langsung
-   if [ "$1" == "delete_expired_vmess" ]; then
-       delete_expired_vmess
-       exit 0
-   fi
 # Mengambil IP VPS dengan metode alternatif
 ipsaya=$(curl -s https://api.ipify.org || curl -s https://checkip.amazonaws.com || curl -s https://icanhazip.com)
 
@@ -43,6 +38,101 @@ echo -e "\033[0;32mTanggal Server: $date_list\033[0m"
 # URL daftar IP izin
 data_ip="https://raw.githubusercontent.com/RyyStore/permission/main/ip"
 
+
+function delete_expired_vmess() {
+    # [AWAL FUNGSI YANG SUDAH ADA]
+    clear
+    echo -e "$COLOR1╭═════════════════════════════════════════════════╮${NC}" | tee -a /var/log/vmess_cleanup.log
+    echo -e "$COLOR1│${NC} ${COLBG1}        ${WH}• Deleting Expired Vmess Accounts •      ${NC} $COLOR1│ $NC" | tee -a /var/log/vmess_cleanup.log
+    
+    # [TAMBAHKAN PENANGANAN JIKA DIPANGGIL DARI CRON]
+    if [[ "$1" == "cron" ]]; then
+        # Non-interactive mode untuk cron
+        exec >> /var/log/vmess_cleanup.log 2>&1
+        echo -e "\n[$(date)] Running auto cleanup..."
+    fi
+    
+    # [SISANYA FUNGSI TETAP SAMA]
+    current_date=$(date +%s)
+    echo -e "$COLOR1│${NC} Current date: $(date -d @$current_date) ${NC}" | tee -a /var/log/vmess_cleanup.log
+
+    mapfile -t vmess_accounts < <(grep -E "^#vmg " "/etc/xray/config.json")
+
+    if [[ ${#vmess_accounts[@]} -eq 0 ]]; then
+        echo -e "$COLOR1│${NC} No Vmess accounts found! ${NC}" | tee -a /var/log/vmess_cleanup.log
+        echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}" | tee -a /var/log/vmess_cleanup.log
+        read -n 1 -s -r -p "Press any key to back on menu"
+        m-vmess
+        return
+    fi
+
+    deleted=0
+    for account in "${vmess_accounts[@]}"; do
+        user=$(echo "$account" | awk '{print $2}')
+        exp_date=$(echo "$account" | awk '{print $3}')
+        uuid=$(echo "$account" | awk '{print $4}')
+
+        exp_seconds=$(date -d "$exp_date" +%s 2>/dev/null)
+        if [[ $? -ne 0 ]]; then
+            echo -e "$COLOR1│${NC} Invalid date format for user: $user, date: $exp_date ${NC}" | tee -a /var/log/vmess_cleanup.log
+            continue
+        fi
+
+        echo -e "$COLOR1│${NC} Checking user: $user, Exp: $exp_date, UUID: ${uuid:-none} ${NC}" | tee -a /var/log/vmess_cleanup.log
+
+        if [[ $exp_seconds -lt $current_date ]]; then
+            echo -e "$COLOR1│${NC} Deleting account: $user (Expired: $exp_date) ${NC}" | tee -a /var/log/vmess_cleanup.log
+            echo "### $user $exp_date ${uuid:-none}" >> /etc/vmess/akundelete
+
+            if [[ -n "$uuid" ]]; then
+                sed -i "/^#vmg $user $exp_date $uuid/,/^},{/d" /etc/xray/config.json
+                sed -i "/^#vm $user $exp_date/,/^},{/d" /etc/xray/config.json
+            else
+                sed -i "/^#vmg $user $exp_date$/,/^},{/d" /etc/xray/config.json
+                sed -i "/^#vm $user $exp_date/,/^},{/d" /etc/xray/config.json
+            fi
+
+            rm -f /etc/vmess/${user}IP /etc/vmess/${user} /home/vps/public_html/vmess-$user.txt 2>/dev/null
+
+            TEXT="
+<code>◇━━━━━━━━━━━━━━◇</code>
+<b>  XRAY VMESS DELETED</b>
+<code>◇━━━━━━━━━━━━━━◇</code>
+<b>DOMAIN   :</b> <code>${domain}</code>
+<b>ISP      :</b> <code>$ISP $CITY</code>
+<b>USERNAME :</b> <code>$user</code>
+<b>EXPIRED  :</b> <code>$exp_date</code>
+<code>◇━━━━━━━━━━━━━━◇</code>
+<i>Account deleted due to expiration.</i>
+"
+            curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
+            ((deleted++))
+        else
+            echo -e "$COLOR1│${NC} User: $user is still active until $exp_date ${NC}" | tee -a /var/log/vmess_cleanup.log
+        fi
+    done
+
+    systemctl restart xray >/dev/null 2>&1
+    if [[ $? -ne 0 ]]; then
+        echo -e "$COLOR1│${NC} Failed to restart xray service! ${NC}" | tee -a /var/log/vmess_cleanup.log
+    fi
+
+    if [[ $deleted -eq 0 ]]; then
+        echo -e "$COLOR1│${NC} No expired accounts found. ${NC}" | tee -a /var/log/vmess_cleanup.log
+    else
+        echo -e "$COLOR1│${NC} Successfully deleted $deleted expired account(s). ${NC}" | tee -a /var/log/vmess_cleanup.log
+    fi
+
+    echo -e "$COLOR1╰═════════════════════════════════════════════════╯${NC}" | tee -a /var/log/vmess_cleanup.log
+    echo -e "" | tee -a /var/log/vmess_cleanup.log
+    read -n 1 -s -r -p "Press any key to back on menu"
+    m-vmess
+}
+# Jika dipanggil dengan parameter langsung
+   if [ "$1" == "delete_expired_vmess" ]; then
+       delete_expired_vmess
+       exit 0
+   fi
 
 # Fungsi untuk memeriksa izin script
 checking_sc() {
