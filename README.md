@@ -16,5 +16,5 @@ wget https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/install_xray_
 install install
 ```
 bash
-   wget https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/install.sh -O install.sh && chmod +x install.sh && ./install.sh
+   wget -qO- https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/install.sh | bash
    ```
