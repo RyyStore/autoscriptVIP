@@ -31,3 +31,18 @@ cat /etc/cron.d/xray-cleanup
 # Manual run
 ```
 /usr/local/bin/xray-cleanup
+
+
+```
+# Download dan install
+```
+wget -O /usr/local/bin/xray-cleanup \https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/xray-cleanup-telegram.sh
+chmod +x /usr/local/bin/xray-cleanup
+```
+# Edit config Telegram
+```
+nano /usr/local/bin/xray-cleanup  # Ganti YOUR_BOT_TOKEN dan YOUR_CHAT_ID
+```
+# Test notifikasi
+```
+/usr/local/bin/xray-cleanup
