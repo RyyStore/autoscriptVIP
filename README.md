@@ -10,15 +10,14 @@ wget -q https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/install/ap
 
 ```
 ```
-```
 wget https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/install_xray_auto_cleanup.sh && chmod +x install_xray_auto_cleanup.sh && ./install_xray_auto_cleanup.sh
+
 ```
 install autodel
 ```
 bash
    wget -qO- https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/install.sh | bash
    ```
-
 # Live log monitoring
 ```
 tail -f /var/log/xray-cleanup.log
