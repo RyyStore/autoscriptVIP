@@ -1,19 +1,14 @@
 #!/bin/bash
-# Xray Auto Cleanup Installer - Fixed for RyyStore Config
+# Ultimate Xray Cleanup Installer for RyyStore
 # GitHub: https://github.com/RyyStore/autoscriptVIP
 
 # Check root
 [ "$(id -u)" -ne 0 ] && { echo "Run as root!"; exit 1; }
 
-# Install dependencies
-if ! command -v jq &> /dev/null; then
-    apt update && apt install jq -y
-fi
-
 # Create main script
 cat << 'EOF' > /usr/local/bin/xray_auto_cleanup
 #!/bin/bash
-# Xray Cleanup Compatible with RyyStore Config
+# Ultimate Xray Cleanup for RyyStore Config
 
 LOG_FILE="/var/log/xray_auto_cleanup.log"
 CONFIG="/etc/xray/config.json"
@@ -27,49 +22,38 @@ log() {
     echo -e "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
 }
 
-cleanup_accounts() {
+# Alternative cleanup method for non-standard configs
+alternative_cleanup() {
     local protocol=$1
-    log "[$protocol] Starting cleanup..."
+    local tag=$2
     
+    log "[$protocol] Starting alternative cleanup for tag: $tag"
     deleted=0
-    current_epoch=$(date +%s)
     
-    # Process using jq
-    accounts=$(jq -r --arg proto "$protocol" '.inbounds[] | select(.protocol == $proto) | .settings.clients[] | select(.email) | "\(.email) \(.expiry)"' "$CONFIG")
+    # Get current date in YYYY-MM-DD format
+    current_date=$(date +%Y-%m-%d)
     
-    while read -r account; do
-        [ -z "$account" ] && continue
-        
-        email=$(echo "$account" | awk '{print $1}')
-        expiry=$(echo "$account" | awk '{print $2}')
-        
-        # Skip if no expiry date
-        [[ -z "$expiry" ]] && {
-            log "[$protocol] WARNING: No expiry for $email"
-            continue
-        }
-        
-        # Convert expiry to epoch
-        if ! expiry_epoch=$(date -d "$expiry" +%s 2>/dev/null); then
-            log "[$protocol] ERROR: Invalid date format for $email - $expiry"
-            continue
+    # Process each account line
+    while read -r line; do
+        # Extract user and expiry date (format: #tag user expiry_date)
+        if [[ "$line" =~ ^${tag}[[:space:]]+([^[:space:]]+)[[:space:]]+([^[:space:]]+) ]]; then
+            user="${BASH_REMATCH[1]}"
+            exp_date="${BASH_REMATCH[2]}"
+            
+            # Compare dates
+            if [[ "$current_date" > "$exp_date" ]]; then
+                log "[$protocol] Deleting expired: $user (Expired: $exp_date)"
+                
+                # Backup account info
+                echo "$user $exp_date" >> "$BACKUP_DIR/${protocol}_deleted_$(date +%F).log"
+                
+                # Remove from config (simple line removal)
+                sed -i "/^${tag} ${user} ${exp_date}/d" "$CONFIG"
+                
+                ((deleted++))
+            fi
         fi
-        
-        # Check if expired
-        if [ "$current_epoch" -gt "$expiry_epoch" ]; then
-            log "[$protocol] Deleting expired: $email (Expired: $expiry)"
-            
-            # Backup account info
-            echo "$email $expiry" >> "$BACKUP_DIR/${protocol}_deleted_$(date +%F).log"
-            
-            # Remove from config using jq
-            jq --arg email "$email" --arg proto "$protocol" \
-               '(.inbounds[] | select(.protocol == $proto).settings.clients |= map(select(.email != $email))' \
-               "$CONFIG" > "${CONFIG}.tmp" && mv "${CONFIG}.tmp" "$CONFIG"
-            
-            ((deleted++))
-        fi
-    done <<< "$accounts"
+    done < <(grep "^${tag} " "$CONFIG")
     
     log "[$protocol] Deleted $deleted accounts"
 }
@@ -77,20 +61,22 @@ cleanup_accounts() {
 # Main process
 {
     echo "======================================"
-    log "Xray Auto Cleanup Started"
+    log "Xray Auto Cleanup Started (Alternative Method)"
     
     # Backup config
     cp "$CONFIG" "${CONFIG}.bak_$(date +%s)"
     
-    # Clean protocols
-    cleanup_accounts "vmess"
-    cleanup_accounts "vless"
-    cleanup_accounts "trojan"
+    # Clean protocols using alternative method
+    alternative_cleanup "vmess" "#vm"
+    alternative_cleanup "vless" "#vl"
+    alternative_cleanup "trojan" "#tr"
     
     # Restart if changes made
     if grep -q "Deleted [1-9]" "$LOG_FILE"; then
         systemctl restart xray
         log "Xray restarted"
+    else
+        log "No accounts deleted"
     fi
     
     log "Cleanup completed"
@@ -115,3 +101,4 @@ echo "Running initial test..."
 echo -e "\nInstallation complete!"
 echo "Log file: /var/log/xray_auto_cleanup.log"
 echo "Backups: /etc/xray/backup_deleted/"
+echo "Note: Using alternative cleanup method for compatibility"
