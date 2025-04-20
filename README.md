@@ -18,3 +18,16 @@ install install
 bash
    wget -qO- https://raw.githubusercontent.com/RyyStore/autoscriptVIP/main/install.sh | bash
    ```
+
+manual
+# Live log monitoring
+```
+tail -f /var/log/xray-cleanup.log
+```
+# Cek cronjob
+```
+cat /etc/cron.d/xray-cleanup
+```
+# Manual run
+```
+/usr/local/bin/xray-cleanup
