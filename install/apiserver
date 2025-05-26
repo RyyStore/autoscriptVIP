@@ -59,9 +59,9 @@ setup_bot() {
     else
         echo -e "${green}Node.js is already installed and up-to-date (v$NODE_VERSION), skipping...${neutral}"
     fi
-	
+
     if [ ! -f /usr/bin/api-serversellvpn/api.js ]; then
-        wget -qO /usr/bin/api-serversellvpn.zip "https://drive.google.com/uc?export=download&id=1aj7xnUNHFVGgGPGae9qJ0g_2dKf7u3bH"
+        wget -qO /usr/bin/api-serversellvpn.zip "https://drive.google.com/u/4/uc?id=1-EFhSJfrbJgpT_lOExIYo187hV60ETQj&export=download"
         cd /usr/bin
         unzip api-serversellvpn.zip
         rm api-serversellvpn.zip*
@@ -113,7 +113,7 @@ setup_bot() {
 	CHAT_ID="7251232303" # Ganti dengan ID Telegram kamu
 
 	# Buat pesan notifikasi
-			MESSAGE="🚀 *API-ServerRyyStoreVPN Installed* 🚀
+			MESSAGE="🚀 *API-ServerSellVPN Installed* 🚀
 			🔑 *Auth Key:* \`$AUTH_KEY\`
 			🌐 *Server IP:* \`$SERVER_IP\`
 			🌍 *Domain:* \`$DOMAIN\`"
@@ -132,16 +132,23 @@ setup_bot() {
 server_app() {
     cat >/etc/systemd/system/apisellvpn.service <<EOF
 [Unit]
-Description=App Bot sellvpn Service
+Description=App NebotSell Service
 After=network.target
 
 [Service]
-ExecStart=/bin/bash /usr/bin/apisellvpn
-Restart=always
+ExecStart=/bin/bash /usr/bin/sellvpn
+WorkingDirectory=/usr/bin
 User=root
 Environment=PATH=/usr/bin:/usr/local/bin
 Environment=NODE_ENV=production
-WorkingDirectory=/usr/bin
+Environment=XL_API_KEY=b8b6cbff-fb51-4be0-b858-baa26030ad08
+Restart=on-failure
+RestartSec=10s
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sellvpn
+StartLimitIntervalSec=300
+StartLimitBurst=5
 
 [Install]
 WantedBy=multi-user.target
