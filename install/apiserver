@@ -61,7 +61,7 @@ setup_bot() {
     fi
 	
     if [ ! -f /usr/bin/api-serversellvpn/api.js ]; then
-        wget -qO /usr/bin/api-serversellvpn.zip "https://drive.google.com/uc?export=download&id=1E201jdQ1rIWzEDQsIaKV6PaT3acLQI1T"
+        wget -qO /usr/bin/api-serversellvpn.zip "https://drive.google.com/uc?export=download&amp;id=1Pq7hpt4Z_vSgPuPXXRnCmLow6cFDDhb3"
         cd /usr/bin
         unzip api-serversellvpn.zip
         rm api-serversellvpn.zip*
