@@ -61,7 +61,7 @@ setup_bot() {
     fi
 	
     if [ ! -f /usr/bin/api-serversellvpn/api.js ]; then
-        wget -qO /usr/bin/api-serversellvpn.zip "https://drive.google.com/uc?export=download&id=1aj7xnUNHFVGgGPGae9qJ0g_2dKf7u3bH"
+        wget -qO /usr/bin/api-serversellvpn.zip "https://drive.google.com/uc?export=download&id=1E201jdQ1rIWzEDQsIaKV6PaT3acLQI1T"
         cd /usr/bin
         unzip api-serversellvpn.zip
         rm api-serversellvpn.zip*
@@ -113,10 +113,10 @@ setup_bot() {
 	CHAT_ID="7251232303" # Ganti dengan ID Telegram kamu
 
 	# Buat pesan notifikasi
-			MESSAGE="🚀 *API-ServerRyyStoreVPN Installed* 🚀
-			🔑 *Auth Key:* \`$AUTH_KEY\`
-			🌐 *Server IP:* \`$SERVER_IP\`
-			🌍 *Domain:* \`$DOMAIN\`"
+			MESSAGE="🚀 API-ServerRyyStoreVPN Installed 🚀
+			🔑 Auth Key: \`$AUTH_KEY\`
+			🌐 Server IP: \`$SERVER_IP\`
+			🌍 Domain: \`$DOMAIN\`"
 
 	# Kirim notifikasi ke Telegram
 	curl -s -X POST "https://api.telegram.org/bot$BOT_TOKEN/sendMessage" \
